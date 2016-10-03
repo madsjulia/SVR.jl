@@ -1,3 +1,5 @@
+#TODO change trail/trailfile to trial/trialfile
+
 using JLD
 
 immutable svm_node
@@ -204,6 +206,7 @@ function fillparam(;svm_type=C_SVC,
 end
 
 function setupoutput(outfolder, modelfile)
+#=
   s = split(outfolder, ['\\', '/'])
 
   for i =1:size(s, 1)
@@ -212,8 +215,12 @@ function setupoutput(outfolder, modelfile)
       mkdir(d)
     end
   end
-
-  outfile = string(outfolder, "/wells_output")
+=#
+  print(outfolder)
+  if !isdir(outfolder)
+    mkdir(outfolder)
+  end
+  outfile = string(outfolder, "/svm_output")
 
   if ispath(outfile)
     rm(outfile)

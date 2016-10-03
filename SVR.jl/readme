@@ -1,0 +1,66 @@
+Insallation
+=======================================
+
+clone repo
+`make` or `julia build.jl` inside of deps folder
+run tests be running test.jl in tests/
+
+uses JLD package
+
+Function description
+=======================================
+grid(num_w, ssh_w, telnet_w, trialfile, options) (tools/grid.jl)
+  -num_w = number of cores per node
+  -ssh_w = list of names of ssh nodes
+  -telnet_w = list of names of telnet nodes (use empty brackets [] to notate no telnet workers - same for ssh)
+  -options are gridregression options, ex/ "-log2c 10,11.1,1 -log2g -2,-0.9,1 -log2p -5,-3.9,1"
+  -check tools/README
+
+runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=false)
+  -give training file and test file in LIBSVM format
+  -ex for options: options="svm_type=EPSILON_SVR,C=100.0,gamm=1.0,p=0.1"
+  -dense flag is to decide whether to use DenseLIBSVM library
+
+runSVMCSV(trailfile, testfile, outfolder, modelfile; options="", dense=false)
+  -use csv file instead of LIBSVM format file for test file
+
+runSVMJLDtrain(trailfile, testfolder, outfolder, modelfile; options="", dense=false)
+  -instead of testfile, pass in directory containing jld files with test data
+
+runSVM* methods uses trainSVM, predictSVM, resultanalysis
+
+do_cross_validation(trailfile, nr_fold; options="")
+  -options same as runSVM*
+  -nr_folds = number of folds
+
+Input Data
+=======================================
+input is in LIBSVM format, read LIBSVM readme
+if you have jld files that is a dictionary with two columns
+where first column is observations, second column is features
+and you have these jld files in one directory, use tools/jld_smaller_io.jl
+to convert into csv file.
+if you have a csv file, use convertSVM(infile, outfile)
+
+Output Data
+=======================================
+output of runSVM* is put into directory specified by outfolder parameter
+if you have old SVM output data in this folder, it is wiped
+it saves 
+  -info
+  -predicted.csv = predicted data in csv format
+  -svm_output = predict data in LIBSVM format
+  -<modelfile> = LIBSVM model file specified by modelfile parameter in runSVM*
+  -target.csv = csv format of testing set observations
+
+Working with OMPI
+=======================================
+download and install Open MPI
+set OMP_NUM_THREADS to number of cores (or less) in shell before training and predicting to run in parallel
+
+TODO:
+  -read model file in julia
+  -make help function for runSVM
+  -make JLDs for training model
+  -make NMF readme
+  -add LIBLINEARSVM
