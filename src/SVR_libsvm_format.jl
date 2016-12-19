@@ -1,4 +1,4 @@
-using JLD
+import JLD
 
 immutable svm_node
   index::Cint
@@ -123,7 +123,7 @@ function csvreadproblem(csvinfile)
 end
 
 function jldreadproblem(jldinfile)
-  p = load(jldinfile)
+  p = JLD.load(jldinfile)
   p = trunc(p[collect(keys(p))[1]], 5)
   pp = p[:, 2:end]
   pp = pp'
@@ -264,12 +264,7 @@ function do_cross_validation(pprob, pparam, nr_fold)
   end
     end
   end
-  
 end
-
-
-
-
 
 function trainSVM(pprob, pparam, modelfile; dense=false)
   println("\n\nbegin training\n")
@@ -440,11 +435,7 @@ function predictSVM3(testdirectory, outfile, pmodel; dense=false)
   target = Array(Float64, templ)
   predicted = Array(Float64, templ)
   
-  s = testdirectory
-  s = split(s, "/")
-  s = s[1:end-1]
-  s = join(s, "/")
-  dirs = readdir(s)
+  dirs = readdir(testdirectory)
 
   timeElapsed2 = @elapsed for j=1:size(dirs, 1)
     dir = dirs[j]
@@ -485,7 +476,7 @@ function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeEl
   sumpp = sum(predicted .* predicted)
   sumtt = sum(target .* target)
   sumpt = sum(predicted .* target)
-  total = size(predicted, 2)
+  total = size(predicted, 1)
 
 
 
@@ -519,7 +510,7 @@ end
 function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=false)
 
   pparam, param = params_from_opts(options)
-  pprob, prob = csvreadproblem(trailfile)
+  pprob = readproblem(trailfile)
 
   modelfile = string(outfolder, "/", modelfile)
   outfile = setupoutput(outfolder, modelfile)
@@ -530,7 +521,7 @@ function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=fal
   ptest = readproblem(testfile)
   predicted, target, test, timeElapsed2 = predictSVM(ptest, outfile, pmodel, dense=dense)
 
-  resultanalysis(predicted, target, param, test, outfolder, timeElapsed, timeElapsed2)
+  resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
 
 end
 
@@ -553,7 +544,7 @@ function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=fa
 
   pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
 
-  predicted, target, timeElapsed2 = predictSVM3(testfile, outfile, pmodel, dense=dense)
+  predicted, target, timeElapsed2 = predictSVM2(testfile, outfile, pmodel, dense=dense)
 
   resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
 

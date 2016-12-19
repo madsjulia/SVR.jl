@@ -1,4 +1,4 @@
-using JLD
+import JLD
 
 immutable svm_node
   index::Cint
@@ -123,7 +123,7 @@ function csvreadproblem(csvinfile)
 end
 
 function jldreadproblem(jldinfile)
-  p = load(jldinfile)
+  p = JLD.load(jldinfile)
   p = trunc(p[collect(keys(p))[1]], 5)
   pp = p[:, 2:end]
   pp = pp'
@@ -429,7 +429,7 @@ end
 
 
 
-function predictSVMJLD(testdirectory, outfile, pmodel; dense=false)
+function predictSVM3(testdirectory, outfile, pmodel; dense=false)
   println("\n\nbegin predictions\n")
   f = open(outfile, "a")
 
@@ -440,7 +440,11 @@ function predictSVMJLD(testdirectory, outfile, pmodel; dense=false)
   target = Array(Float64, templ)
   predicted = Array(Float64, templ)
   
-  dirs = readdir(testdirectory)
+  s = testdirectory
+  s = split(s, "/")
+  s = s[1:end-1]
+  s = join(s, "/")
+  dirs = readdir(s)
 
   timeElapsed2 = @elapsed for j=1:size(dirs, 1)
     dir = dirs[j]
@@ -481,7 +485,7 @@ function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeEl
   sumpp = sum(predicted .* predicted)
   sumtt = sum(target .* target)
   sumpt = sum(predicted .* target)
-  total = size(predicted, 1)
+  total = size(predicted, 2)
 
 
 
@@ -515,7 +519,7 @@ end
 function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=false)
 
   pparam, param = params_from_opts(options)
-  pprob = readproblem(trailfile)
+  pprob, prob = csvreadproblem(trailfile)
 
   modelfile = string(outfolder, "/", modelfile)
   outfile = setupoutput(outfolder, modelfile)
@@ -526,31 +530,22 @@ function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=fal
   ptest = readproblem(testfile)
   predicted, target, test, timeElapsed2 = predictSVM(ptest, outfile, pmodel, dense=dense)
 
-  resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
+  resultanalysis(predicted, target, param, test, outfolder, timeElapsed, timeElapsed2)
 
 end
 
-function runSVMJLD(trailfile, testfolder, outfolder, modelfile; options="", dense=false)
+function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=false)
+
+  fileend = trailfile[end-3:end]
+  if fileend == ".csv"
+  pprob, prob = csvreadproblem(trailfile)
+  elseif fileend == ".jld"
+  pprob, prob = jldreadproblem(trailfile)
+  else
+  pprob = readproblem(trailfile)
+  end
 
   pparam, param = params_from_opts(options)
-  pprob = readproblem(trailfile)
-
-
-  modelfile = string(outfolder, "/", modelfile)
-  outfile = setupoutput(outfolder, modelfile)
-
-  pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
-
-  predicted, target, timeElapsed2 = predictSVMJLD(testfolder, outfile, pmodel, dense=dense)
-
-  resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
-
-end
-
-function runSVMCSV(trailfile, testfile, outfolder, modelfile; options="", dense=false)
-
-  pparam, param = params_from_opts(options)
-  pprob = readproblem(trailfile)
 
   modelfile = string(outfolder, "/", modelfile)
   outfile = setupoutput(outfolder, modelfile)
@@ -558,7 +553,7 @@ function runSVMCSV(trailfile, testfile, outfolder, modelfile; options="", dense=
 
   pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
 
-  predicted, target, timeElapsed2 = predictSVM2(testfile, outfile, pmodel, dense=dense)
+  predicted, target, timeElapsed2 = predictSVM3(testfile, outfile, pmodel, dense=dense)
 
   resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
 
