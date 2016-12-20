@@ -129,7 +129,6 @@ trailfile = "data/wells/wells_trails"
 testfile = "data/wells/wells_tests"
 outpathgeneral = "data/output/"
 
-
 pprob = ccall((:read_problem, "/n/srv/vessg/Downloads/libsvm-3.21/test.so"), Ptr{svm_problem}, (Ptr{UInt8},), trailfile)
 prob = unsafe_load(pprob)
 pf = prob.y

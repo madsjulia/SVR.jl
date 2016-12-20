@@ -118,7 +118,7 @@ function csvreadproblem(csvinfile)
 	return pprob1, prob1
 end
 
-function jldreadproblem(jldinfile)
+function jldreadproblem(jldinfile::String)
 	p = JLD.load(jldinfile)
 	p = trunc(p[collect(keys(p))[1]], 5)
 	pp = p[:, 2:end]
@@ -192,19 +192,19 @@ function setupoutput(outfolder, modelfile)
 		end
 	end
 
-	outfile = string(outfolder, "/wells_output")
+	outfile = joinpath(outfolder, "wells_output")
 
 	if ispath(outfile)
 		rm(outfile)
 	end
-	if ispath(string(outfolder, "/predicted.csv"))
-		rm(string(outfolder, "/predicted.csv"))
+	if ispath(joinpath(outfolder, "predicted.csv"))
+		rm(joinpath(outfolder, "predicted.csv"))
 	end
-	if ispath(string(outfolder, "/target.csv"))
-		rm(string(outfolder, "/target.csv"))
+	if ispath(joinpath(outfolder, "target.csv"))
+		rm(joinpath(outfolder, "target.csv"))
 	end
-	if ispath(string(outfolder, "/info"))
-		rm(string(outfolder, "/info"))
+	if ispath(joinpath(outfolder, "info"))
+		rm(joinpath(outfolder, "info"))
 	end
 	if ispath(modelfile)
 		rm(modelfile)
@@ -453,8 +453,6 @@ function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeEl
 	sumpt = sum(predicted .* target)
 	total = size(predicted, 2)
 
-
-
 	if param.svm_type==NU_SVR || param.svm_type==EPSILON_SVR
 		sqErr = error/total
 		sqCorr = ((total*sumpt-sump*sumt)*(total*sumpt-sump*sumt))/((total*sumpp-sump*sump)*(total*sumtt-sumt*sumt))
@@ -462,10 +460,9 @@ function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeEl
 		println("Squared correlation coefficient =", trunc(sqCorr, 6), "(regression)")
 	end
 
-
-	writecsv(string(outfolder, "/predicted.csv"), predicted)
-	writecsv(string(outfolder, "/target.csv"), target)
-	f = open(string(outfolder, "/info"), "a")
+	writecsv(joinpath(outfolder, "predicted.csv"), predicted)
+	writecsv(joinpath(outfolder, "target.csv"), target)
+	f = open(joinpath(outfolder, "info"), "a")
 	write(f, string("Mean squared error = ", trunc(sqErr, 2), "(regression)\n",
 		"Squared correlation coefficient = ", trunc(sqCorr, 6), "(regression)\n",
 		"time to train = ", timeElapsed, " seconds\n",
@@ -483,13 +480,11 @@ function params_from_opts(options)
 end
 
 function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=false)
-
 	pparam, param = params_from_opts(options)
 	pprob, prob = csvreadproblem(trailfile)
 
-	modelfile = string(outfolder, "/", modelfile)
+	modelfile = joinpath(outfolder, modelfile)
 	outfile = setupoutput(outfolder, modelfile)
-
 
 	pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
 
@@ -497,11 +492,9 @@ function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=fal
 	predicted, target, test, timeElapsed2 = predictSVM(ptest, outfile, pmodel, dense=dense)
 
 	resultanalysis(predicted, target, param, test, outfolder, timeElapsed, timeElapsed2)
-
 end
 
 function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=false)
-
 	fileend = trailfile[end-3:end]
 	if fileend == ".csv"
 		pprob, prob = csvreadproblem(trailfile)
@@ -513,7 +506,7 @@ function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=fa
 
 	pparam, param = params_from_opts(options)
 
-	modelfile = string(outfolder, "/", modelfile)
+	modelfile = joinpath(outfolder, modelfile)
 	outfile = setupoutput(outfolder, modelfile)
 
 	pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
@@ -522,5 +515,4 @@ function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=fa
 	predicted, target, timeElapsed2 = predictSVM3(testfile, outfile, pmodel, dense=dense)
 
 	resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
-
 end

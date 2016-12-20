@@ -1,4 +1,4 @@
-using Distributions
+import Distributions
 
 this_test_folder_path = dirname(Base.source_path())
 include(string(this_test_folder_path, "/../julia/src1.jl"))
@@ -10,36 +10,36 @@ br = [-10, 10]
 cr = [-5, 5]
 nr = [-3, 3]
 t = [1,2,3,4,5]
+
 if isdir(string(this_test_folder_path, "/../examples/"))
-  rm(string(this_test_folder_path, "/../examples/"), recursive=true)
+	rm(string(this_test_folder_path, "/../examples/"), recursive=true)
 end
 if !isdir(string(this_test_folder_path, "/../examples/"))
-  mkdir(string(this_test_folder_path, "/../examples"))
+	mkdir(string(this_test_folder_path, "/../examples"))
 end
 if !isdir(string(this_test_folder_path, "/../examples/testjlds"))
-  mkdir(string(this_test_folder_path, "/../examples/testjlds"))
+	mkdir(string(this_test_folder_path, "/../examples/testjlds"))
 end
 
-
 function f_cvs(numPoints, ar, br, cr, nr, t, outJLD)
-      arr = Array(Float64, 5*numPoints, 6)
-      for i=1:numPoints
-              a_d = Uniform((ar[1]), (ar[end]))
-              b_d = Uniform((br[1]), (br[end]))
-              c_d = Uniform((cr[1]), (cr[end]))
-              n_d = Uniform((nr[1]), (nr[end]))
-              a = rand(a_d)
-              b = rand(b_d)
-              c = rand(c_d)
-              n = rand(n_d)
-              for (j, ts) in enumerate(t)
-		      f = (a*float(ts)^(n))+(b*ts)+c
-		      arr[5*(i-1)+j, :] = [f, a, b, c, n, ts]'
-#	              print(".")
-              end
-      end
-      save(outJLD, "data", arr)
-      return arr
+	arr = Array(Float64, 5*numPoints, 6)
+	for i=1:numPoints
+		a_d = Distributions.Uniform((ar[1]), (ar[end]))
+		b_d = Distributions.Uniform((br[1]), (br[end]))
+		c_d = Distributions.Uniform((cr[1]), (cr[end]))
+		n_d = Distributions.Uniform((nr[1]), (nr[end]))
+		a = rand(a_d)
+		b = rand(b_d)
+		c = rand(c_d)
+		n = rand(n_d)
+		for (j, ts) in enumerate(t)
+			f = (a*float(ts)^(n))+(b*ts)+c
+			arr[5*(i-1)+j, :] = [f, a, b, c, n, ts]'
+#			print(".")
+		end
+	end
+	save(outJLD, "data", arr)
+	return arr
 end
 
 arr = f_cvs(100, ar, br, cr, nr, t, string(this_test_folder_path, "/../examples/training.jld"))
