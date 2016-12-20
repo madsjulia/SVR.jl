@@ -163,23 +163,23 @@ function fillparam(;svm_type=C_SVC,
 				weight_label = Ptr{Int32}(0x0000000000000000),
 				weight = Ptr{Float64}(0x0000000000000000))
 
-		param = svm_parameter(svm_type,
-				kernel_type,
-				degree,
-				gamma,
-				coef0,
-				cache_size,
-				eps,
-				C,
-				nr_weight,
-				weight_label,
-				weight,
-				nu,
-				p,
-				shrinking,
-				probability)
-		
-		return param
+	param = svm_parameter(svm_type,
+			kernel_type,
+			degree,
+			gamma,
+			coef0,
+			cache_size,
+			eps,
+			C,
+			nr_weight,
+			weight_label,
+			weight,
+			nu,
+			p,
+			shrinking,
+			probability)
+	
+	return param
 end
 
 function setupoutput(outfolder, modelfile)
@@ -200,7 +200,7 @@ function setupoutput(outfolder, modelfile)
 	if ispath(joinpath(outfolder, "predicted.csv"))
 		rm(joinpath(outfolder, "predicted.csv"))
 	end
-	if ispath(joinpath(outfolder, "target.csv"))
+	if ispath(joinpats = split(outfolder, ['\\', '/'])h(outfolder, "target.csv"))
 		rm(joinpath(outfolder, "target.csv"))
 	end
 	if ispath(joinpath(outfolder, "info"))
@@ -212,7 +212,7 @@ function setupoutput(outfolder, modelfile)
 	outfile
 end
 
-function do_cross_validation(trailfile, nr_fold; options="")
+function do_cross_validation(trailfile, nr_fold; options::String="")
 	fileend = trailfile[end-3:end]
 	if fileend == ".csv"
 		pprob, prob = csvreadproblem(trailfile)
@@ -261,7 +261,7 @@ function do_cross_validation(pprob, pparam, nr_fold)
 	end
 end
 
-function trainSVM(pprob, pparam, modelfile; dense=false)
+function trainSVM(pprob, pparam, modelfile; dense::Bool=false)
 	println("\n\nbegin training\n")
 	if !dense
 		timeElapsed = @elapsed pmodel = ccall((:svm_train, svmlib), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pprob, pparam)
@@ -282,7 +282,7 @@ function getbar()
 	return barlen
 end
 
-function predictSVM(ptest, outfile, pmodel; dense=false)
+function predictSVM(ptest, outfile, pmodel; dense::Bool=false)
 	println("\n\nbegin predictions\n")
 	test = unsafe_load(ptest)
 
@@ -342,7 +342,7 @@ function predictSVM(ptest, outfile, pmodel; dense=false)
 	return predicted, target, test, timeElapsed2
 end
 
-function predictSVM2(testfile, outfile, pmodel; dense=false)
+function predictSVM2(testfile, outfile, pmodel; dense::Bool=false)
 	println("\n\nbegin predictions\n")
 	ftest = open(testfile, "r")
 	f = open(outfile, "a")
@@ -399,7 +399,7 @@ function predictSVM2(testfile, outfile, pmodel; dense=false)
 	return finalpredicted, finaltarget, timeElapsed2
 end
 
-function predictSVM3(testdirectory, outfile, pmodel; dense=false)
+function predictSVM3(testdirectory, outfile, pmodel; dense::Bool=false)
 	println("\n\nbegin predictions\n")
 	f = open(outfile, "a")
 
@@ -472,14 +472,14 @@ function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeEl
 	return sqErr, sqCorr
 end
 
-function params_from_opts(options)
+function params_from_opts(options::String)
 	parammaker = string("fillparam(", options, ")")
 	param = eval(parse(parammaker))
 	pparam = convert(Ptr{svm_parameter}, pointer_from_objref(param))
 	return pparam, param
 end
 
-function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=false)
+function runSVM(trailfile, testfile, outfolder, modelfile; options::String="", dense::Bool=false)
 	pparam, param = params_from_opts(options)
 	pprob, prob = csvreadproblem(trailfile)
 
@@ -494,7 +494,7 @@ function runSVM(trailfile, testfile, outfolder, modelfile; options="", dense=fal
 	resultanalysis(predicted, target, param, test, outfolder, timeElapsed, timeElapsed2)
 end
 
-function runSVM2(trailfile, testfile, outfolder, modelfile; options="", dense=false)
+function runSVM2(trailfile, testfile, outfolder, modelfile; options::String="", dense::Bool=false)
 	fileend = trailfile[end-3:end]
 	if fileend == ".csv"
 		pprob, prob = csvreadproblem(trailfile)
