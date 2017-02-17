@@ -2,8 +2,8 @@ import SVR
 import Distributions
 
 this_test_folder_path = dirname(Base.source_path())
-include(string(this_test_folder_path, "/../julia/src1.jl"))
-include(string(this_test_folder_path, "/../tools/grid.jl"))
+include(joinpath(this_test_folder_path, "..", "julia", "src1.jl"))
+include(joinpath(this_test_folder_path, "..", "tools", "grid.jl"))
 make()
 
 ar = [-10, 10]

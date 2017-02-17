@@ -61,18 +61,13 @@ const RBF = Int32(2)
 const SIGMOID = Int32(3)
 const PRECOMPUTED = Int32(4)
 
-shell_path = pwd()
-cd(dirname(Base.source_path()))
-const svmlib = abspath("../libsvm.so.2")
-const densesvmlib = abspath("../denselibsvm.so.2")
-const testlib = abspath("../trainlib.so.2")
-# const conpath = abspath("../convertlib.so.2")
-cd(shell_path)
+const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libsvm.so.2"))
+const densesvmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "denselibsvm.so.2"))
+const trainlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "trainlib.so.2"))
 
 function convertSVM(infile, outfile)
 	fin = open(infile, "r")
 	fout = open(outfile, "a")
-
 	while true
 		a = readline(fin)
 		if a == ""
@@ -82,28 +77,27 @@ function convertSVM(infile, outfile)
 		a = map(x->Float64(parse(x)), a)
 		printout(fout, a)
 	end
-
 	close(fin)
 	close(fout)
 end
 
 function nodes(instances)
-		nfeatures = size(instances, 1)
-		ninstances = size(instances, 2)
-		nodeptrs = Array(Ptr{svm_node}, ninstances)
-		nodes = Array(svm_node, nfeatures + 1, ninstances)
+	nfeatures = size(instances, 1)
+	ninstances = size(instances, 2)
+	nodeptrs = Array(Ptr{svm_node}, ninstances)
+	nodes = Array(svm_node, nfeatures + 1, ninstances)
 
-		for i=1:ninstances
-				k = 1
-				for j=1:nfeatures
-						nodes[k, i] = svm_node(Int32(j), Float64(instances[j, i]))
-						k += 1
-				end
-				nodes[k, i] = svm_node(Int32(-1), 0.0)
-				nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
+	for i=1:ninstances
+		k = 1
+		for j=1:nfeatures
+			nodes[k, i] = svm_node(Cint(j), Float64(instances[j, i]))
+			k += 1
 		end
+		nodes[k, i] = svm_node(Cint(-1), 0.0)
+		nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
+	end
 
-		(nodes, nodeptrs)
+	(nodes, nodeptrs)
 end
 
 function csvreadproblem(csvinfile)
@@ -287,61 +281,59 @@ end
 function predictSVM(ptest, outfile, pmodel; dense::Bool=false)
 	println("\n\nbegin predictions\n")
 	test = unsafe_load(ptest)
-
 	f = open(outfile, "a")
-
 	amountdone = 0
 	target = Array(Float64, test.l)
 	predicted = Array(Float64, test.l)
 	barlen = getbar()
-#   println("checkpoint 1")
+	#   println("checkpoint 1")
 	timeElapsed2 = @elapsed for i=1:test.l
-			if i%round(Int, test.l/barlen)==0
+	if i%round(Int, test.l/barlen)==0
 		barlen = getbar()
 		print("\r")
 		amountdone = round(Int, i/(round(Int, test.l/barlen)))
 		percentage = (round((i/test.l)*10000))/100
 		print(percentage, "% done \t|")
 		for j=1:barlen
-				if j<=amountdone
-			print("█")
-				else
-			print(" ")
-				end
-		end
-		print("|")
-			elseif i==1
-	print("\r")
-		percentage = (round((i/test.l)*10000))/100
-		print(percentage, "% done \t|")
-		for j=1:barlen
-				print(" ")
-		end
-		print("|")
-			elseif i==test.l
-	print("\r")
-		percentage = (round((i/test.l)*10000))/100
-		print(percentage, "% done \t|")
-		for j=1:barlen
+			if j<=amountdone
 				print("█")
+			else
+				print(" ")
+			end
 		end
 		print("|")
-			end
-#       println("checkpoint 2")
-			target[i] = unsafe_load(test.y, i)
-			point = unsafe_load(test.x, i)
-			if !dense
-	pred = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
-			else
-	pred = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
-			end
-			predicted[i] = pred
-			write(f, string(pred, "\n"))
-#       println("checkpoint 3")
+	elseif i==1
+		print("\r")
+		percentage = (round((i/test.l)*10000))/100
+		print(percentage, "% done \t|")
+		for j=1:barlen
+			print(" ")
+		end
+		print("|")
+	elseif i==test.l
+		print("\r")
+		percentage = (round((i/test.l)*10000))/100
+		print(percentage, "% done \t|")
+		for j=1:barlen
+			print("█")
+		end
+		print("|")
 	end
-	close(f)
-	println()
-	return predicted, target, test, timeElapsed2
+	#       println("checkpoint 2")
+	target[i] = unsafe_load(test.y, i)
+	point = unsafe_load(test.x, i)
+	if !dense
+		pred = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
+	else
+		pred = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
+	end
+	predicted[i] = pred
+	write(f, string(pred, "\n"))
+	#       println("checkpoint 3")
+end
+close(f)
+println()
+return predicted, target, test, timeElapsed2
 end
 
 function predictSVM2(testfile, outfile, pmodel; dense::Bool=false)
@@ -507,7 +499,6 @@ function runSVM2(trailfile, testfile, outfolder, modelfile; options::String="", 
 	end
 
 	pparam, param = params_from_opts(options)
-
 	modelfile = joinpath(outfolder, modelfile)
 	outfile = setupoutput(outfolder, modelfile)
 
