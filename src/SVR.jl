@@ -1,3 +1,5 @@
+module SVR
+
 import JLD
 
 immutable svm_node
@@ -17,7 +19,7 @@ immutable svm_parameter
 	degree::Cint
 	gamma::Cdouble
 	coef0::Cdouble
-	
+
 	cache_size::Cdouble
 	eps::Cdouble
 	C::Cdouble
@@ -40,10 +42,10 @@ immutable svm_model
 	probA::Ptr{Cdouble}
 	probB::Ptr{Cdouble}
 	sv_indices::Ptr{Cint}
-	
+
 	label::Ptr{Cint}
 	nSV::Ptr{Cint}
-	
+
 	free_sv::Cint
 end
 
@@ -70,7 +72,7 @@ cd(shell_path)
 function convertSVM(infile, outfile)
 	fin = open(infile, "r")
 	fout = open(outfile, "a")
-	
+
 	while true
 		a = readline(fin)
 		if a == ""
@@ -80,7 +82,7 @@ function convertSVM(infile, outfile)
 		a = map(x->Float64(parse(x)), a)
 		printout(fout, a)
 	end
-	
+
 	close(fin)
 	close(fout)
 end
@@ -178,7 +180,7 @@ function fillparam(;svm_type=C_SVC,
 			p,
 			shrinking,
 			probability)
-	
+
 	return param
 end
 
@@ -232,9 +234,9 @@ function do_cross_validation(pprob, pparam, nr_fold)
 	total_correct = 0
 	total_error = sumv = sumy = sumvv = sumyy = sumvy = 0.0
 	target = Array(Float64, prob.l)
-	
+
 	ccall((:svm_cross_validation, svmlib), Void, (Ptr{svm_problem}, Ptr{svm_parameter}, Cint, Ptr{Float64}), pprob, pparam, nr_fold, pointer(target))
-	
+
 	if param.svm_type == EPSILON_SVR || param.svm_type == NU_SVR
 		for i=1:prob.l
 			y = unsafe_load(prob.y, i)
@@ -324,8 +326,8 @@ function predictSVM(ptest, outfile, pmodel; dense::Bool=false)
 				print("█")
 		end
 		print("|")
-			end	
-#       println("checkpoint 2")	
+			end
+#       println("checkpoint 2")
 			target[i] = unsafe_load(test.y, i)
 			point = unsafe_load(test.x, i)
 			if !dense
@@ -346,7 +348,7 @@ function predictSVM2(testfile, outfile, pmodel; dense::Bool=false)
 	println("\n\nbegin predictions\n")
 	ftest = open(testfile, "r")
 	f = open(outfile, "a")
-	
+
 	templ = 100000
 	amountdone = 0
 	finaltarget = Array(Float64, 0)
@@ -409,7 +411,7 @@ function predictSVM3(testdirectory, outfile, pmodel; dense::Bool=false)
 	finalpredicted = Array(Float64, 0)
 	target = Array(Float64, templ)
 	predicted = Array(Float64, templ)
-	
+
 	s = testdirectory
 	s = split(s, "/")
 	s = s[1:end-1]
@@ -511,8 +513,10 @@ function runSVM2(trailfile, testfile, outfolder, modelfile; options::String="", 
 
 	pmodel, timeElapsed, success = trainSVM(pprob, pparam, modelfile, dense=dense)
 
-	return  
+	return
 	predicted, target, timeElapsed2 = predictSVM3(testfile, outfile, pmodel, dense=dense)
 
 	resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
+end
+
 end

@@ -304,7 +304,6 @@ struct svm_parameter *makeparam()
 	param.weight = NULL;
 	cross_validation = 0;
 	return &param;
-  
 }
 
 struct svm_problem *read_problem(const char *filename)
