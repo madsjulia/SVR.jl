@@ -1,3 +1,4 @@
+import SVR
 import Distributions
 
 this_test_folder_path = dirname(Base.source_path())
