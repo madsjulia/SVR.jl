@@ -275,16 +275,6 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 
 // read in a problem (in svmlight format)
 
-void *get_prob()
-{
-  return &prob;
-}
-
-void *get_param()
-{
-  return &param;
-}
-
 void read_problem(const char *filename)
 {
 	int max_index, inst_max_index, i;

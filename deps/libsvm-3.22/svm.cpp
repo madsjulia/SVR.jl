@@ -1282,8 +1282,7 @@ public:
 		int start, j;
 		if((start = cache->get_data(i,&data,len)) < len)
 		{
-		#pragma omp parallel for private(j) schedule(guided)
-				for(j=start;j<len;j++)
+			for(j=start;j<len;j++)
 				data[j] = (Qfloat)(y[i]*y[j]*(this->*kernel_function)(i,j));
 		}
 		return data;
@@ -1398,7 +1397,6 @@ public:
 		int j, real_i = index[i];
 		if(cache->get_data(real_i,&data,l) < l)
 		{
-		#pragma omp parallel for private(j)
 			for(j=0;j<l;j++)
 				data[j] = (Qfloat)(this->*kernel_function)(real_i,j);
 		}
@@ -2097,6 +2095,20 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 	model->param = *param;
 	model->free_sv = 0;	// XXX
 
+	/*
+	printf("H %d %d\n", param->svm_type, prob->l);
+	for(int i=0;i<prob->l;i++)
+		printf("%g ", prob->y[i]);
+	printf("\n");
+	svm_node **x = Malloc(svm_node *,prob->l);
+	int i;
+	for(i=0;i<prob->l;i++)
+		x[i] = prob->x[i];
+	for(int i=0;i<prob->l;i++)
+		printf("%g ", x[i]->value);
+	printf("\n");
+	free(x);
+	*/
 	if(param->svm_type == ONE_CLASS ||
 	   param->svm_type == EPSILON_SVR ||
 	   param->svm_type == NU_SVR)
@@ -2110,7 +2122,7 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 
 		if(param->probability &&
 		   (param->svm_type == EPSILON_SVR ||
-			param->svm_type == NU_SVR))
+		    param->svm_type == NU_SVR))
 		{
 			model->probA = Malloc(double,1);
 			model->probA[0] = svm_svr_probability(prob,param);
@@ -2354,7 +2366,7 @@ void svm_cross_validation(const svm_problem *prob, const svm_parameter *param, i
 	// stratified cv may not give leave-one-out rate
 	// Each class to l folds -> some folds may have zero elements
 	if((param->svm_type == C_SVC ||
-		param->svm_type == NU_SVC) && nr_fold < l)
+	    param->svm_type == NU_SVC) && nr_fold < l)
 	{
 		int *start = NULL;
 		int *label = NULL;
@@ -2491,7 +2503,7 @@ int svm_get_nr_sv(const svm_model *model)
 double svm_get_svr_probability(const svm_model *model)
 {
 	if ((model->param.svm_type == EPSILON_SVR || model->param.svm_type == NU_SVR) &&
-		model->probA!=NULL)
+	    model->probA!=NULL)
 		return model->probA[0];
 	else
 	{
@@ -2509,7 +2521,6 @@ double svm_predict_values(const svm_model *model, const svm_node *x, double* dec
 	{
 		double *sv_coef = model->sv_coef[0];
 		double sum = 0;
-		#pragma omp parallel for private(i) reduction(+:sum) schedule(guided)
 		for(i=0;i<model->l;i++)
 			sum += sv_coef[i] * Kernel::k_function(x,model->SV[i],model->param);
 		sum -= model->rho[0];
@@ -2526,7 +2537,6 @@ double svm_predict_values(const svm_model *model, const svm_node *x, double* dec
 		int l = model->l;
 
 		double *kvalue = Malloc(double,l);
-		#pragma omp parallel for private(i) schedule(guided)
 		for(i=0;i<l;i++)
 			kvalue[i] = Kernel::k_function(x,model->SV[i],model->param);
 
@@ -2597,7 +2607,7 @@ double svm_predict_probability(
 	const svm_model *model, const svm_node *x, double *prob_estimates)
 {
 	if ((model->param.svm_type == C_SVC || model->param.svm_type == NU_SVC) &&
-		model->probA!=NULL && model->probB!=NULL)
+	    model->probA!=NULL && model->probB!=NULL)
 	{
 		int i;
 		int nr_class = model->nr_class;
@@ -2616,7 +2626,13 @@ double svm_predict_probability(
 				pairwise_prob[j][i]=1-pairwise_prob[i][j];
 				k++;
 			}
-		multiclass_probability(nr_class,pairwise_prob,prob_estimates);
+		if (nr_class == 2)
+		{
+			prob_estimates[0] = pairwise_prob[0][1];
+			prob_estimates[1] = pairwise_prob[1][0];
+		}
+		else
+			multiclass_probability(nr_class,pairwise_prob,prob_estimates);
 
 		int prob_max_idx = 0;
 		for(i=1;i<nr_class;i++)
@@ -2771,6 +2787,11 @@ static char* readline(FILE *input)
 bool read_model_header(FILE *fp, svm_model* model)
 {
 	svm_parameter& param = model->param;
+	// parameters for training only won't be assigned, but arrays are assigned as NULL for safety
+	param.nr_weight = 0;
+	param.weight_label = NULL;
+	param.weight = NULL;
+
 	char cmd[81];
 	while(1)
 	{
