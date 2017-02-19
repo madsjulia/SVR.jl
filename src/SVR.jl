@@ -127,19 +127,19 @@ function train(y::Vector, x::Array; dense::Bool=false, svm_type::Int32=EPSILON_S
 	return pmodel
 end
 
-function predict(model::svm_model, x::Array; dense::Bool=false)
+function predict(pmodel::Ptr{svm_model}, x::Array; dense::Bool=false)
 	(nodes, nodeptrs) = mapnodes(x)
-	nx = size(instances, 2)
-	predicted = Array(Float64, nx)
+	nx = size(x, 2)
+	y = Array(Float64, nx)
 	for i = 1:nx
 		if !dense
-			pred = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pointer(model), nodeptrs[i])
+			p = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, nodeptrs[i])
 		else
-			pred = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pointer(model), nodeptrs[i])
+			p = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, nodeptrs[i])
 		end
-		predicted[i] = pred
+		y[i] = p
 	end
-	return predicted
+	return y
 end
 
 end
