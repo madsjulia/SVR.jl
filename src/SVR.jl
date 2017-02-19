@@ -2,6 +2,8 @@ module SVR
 
 import JLD
 
+include("extras.jl")
+
 immutable svm_node
 	index::Cint
 	value::Cdouble
@@ -59,23 +61,7 @@ const SIGMOID = Cint(3)
 const PRECOMPUTED = Cint(4)
 
 const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libsvm.so.2"))
-const densesvmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "denselibsvm.so.2"))
-
-function convertSVM(infile::String, outfile::String)
-	fin = open(infile, "r")
-	fout = open(outfile, "a")
-	while true
-		a = readline(fin)
-		if a == ""
-			break
-		end
-		a = split(a, ",")
-		a = map(x->Float64(parse(x)), a)
-		printout(fout, a)
-	end
-	close(fin)
-	close(fout)
-end
+const densesvmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libdensesvm.so.2"))
 
 function mapnodes(instances)
 	nfeatures = size(instances, 1)
@@ -94,157 +80,66 @@ function mapnodes(instances)
 	(nodes, nodeptrs)
 end
 
-function fillparam(;svm_type=EPSILON_SVR,
-	kernel_type=RBF,
-	degree=3,
-	gamma=0.0,
-	coef0=0.0,
-	nu=0.5,
-	cache_size=100.0,
-	C=1.0,
-	eps=1e-3,
-	p=0.1,
-	shrinking=1,
-	probability=0,
-	nr_weight = 0,
-	weight_label = Ptr{Int32}(0x0000000000000000),
-	weight = Ptr{Float64}(0x0000000000000000))
+function mapparam(;
+	svm_type::Cint=EPSILON_SVR,
+	kernel_type::Cint=RBF,
+	degree::Integer=3,
+	gamma::Float64=1.0,
+	coef0::Float64=0.0,
+	C::Float64=1.0,
+	nu::Float64=0.5,
+	p::Float64=0.1,
+	cache_size::Cdouble=100.0,
+	eps::Cdouble=0.001,
+	shrinking::Bool=true,
+	probability::Bool=false,
+	nr_weight::Integer = 0,
+	weight_label = Ptr{Cint}(0x0000000000000000),
+	weight = Ptr{Cdouble}(0x0000000000000000))
 
-	param = svm_parameter(svm_type,
-		kernel_type,
-		degree,
-		gamma,
-		coef0,
-		cache_size,
-		eps,
-		C,
-		nr_weight,
+	param = svm_parameter(Cint(svm_type),
+		Cint(kernel_type),
+		Cint(degree),
+		Cdouble(gamma),
+		Cdouble(coef0),
+		Cdouble(cache_size),
+		Cdouble(eps),
+		Cdouble(C),
+		Cint(nr_weight),
 		weight_label,
 		weight,
-		nu,
-		p,
-		shrinking,
-		probability)
+		Cdouble(nu),
+		Cdouble(p),
+		Cint(shrinking),
+		Cint(probability))
 	return param
 end
 
-function do_cross_validation(trailfile, nr_fold; options::String="")
-	fileend = trailfile[end-3:end]
-	if fileend == ".csv"
-		pprob, prob = csvreadproblem(trailfile)
-	elseif fileend == ".jld"
-		pprob, prob = jldreadproblem(trailfile)
-	else
-		pprob = readproblem(trailfile)
-	end
-
-	pparam, param = params_from_opts(options)
-	do_cross_validation(pprob, pparam, nr_fold)
-end
-
-function do_cross_validation(pprob, pparam, nr_fold)
-	prob = unsafe_load(pprob)
-	param = unsafe_load(pparam)
-	total_correct = 0
-	total_error = sumv = sumy = sumvv = sumyy = sumvy = 0.0
-	target = Array(Float64, prob.l)
-
-	ccall((:svm_cross_validation, svmlib), Void, (Ptr{svm_problem}, Ptr{svm_parameter}, Cint, Ptr{Float64}), pprob, pparam, nr_fold, pointer(target))
-
-	if param.svm_type == EPSILON_SVR || param.svm_type == NU_SVR
-		for i=1:prob.l
-			y = unsafe_load(prob.y, i)
-			v = target[i]
-			total_error += (v-y)*(v-y)
-			sumv+=v
-			sumy+=y
-			sumvv+v*v
-			sumyy+=y*y
-			sumvy+=v*y
-		end
-		@printf("Cross Validation Mean squared error = %g\n",total_error/prob.l)
-		@printf("Cross Validation Squared correlation coefficient = %g\n",
-			((prob.l*sumvy-sumv*sumy)*(prob.l*sumvy-sumv*sumy))/
-			((prob.l*sumvv-sumv*sumv)*(prob.l*sumyy-sumy*sumy))
-			)
-	else
-		for i=1:prob.l
-			if target[i] == unsafe_load(prob.y, i)
-	total_correct+=1
-	@printf("Cross Validation Accuracy = %g%%\n",100.0*total_correct/prob.l)
-	end
-		end
-	end
-end
-
-function trainSVM(pprob, pparam, modelfile; dense::Bool=false)
+function train(y::Vector, x::Array; dense::Bool=false, svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/length(y), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, p::Float64=0.1, cache_size::Float64=100.0, eps::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=p, cache_size=cache_size, eps=eps, shrinking=shrinking, probability=probability)
+	(nodes, nodeptrs) = mapnodes(x)
+	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	if !dense
-		timeElapsed = @elapsed pmodel = ccall((:svm_train, svmlib), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pprob, pparam)
-		success = ccall((:svm_save_model, svmlib), Int32, (Ptr{UInt8},Ptr{svm_model}), modelfile, pmodel)
+		pmodel = ccall((:svm_train, svmlib), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	else
-		timeElapsed = @elapsed pmodel = ccall((:svm_train, densesvmlib), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pprob, pparam)
-		success = ccall((:svm_save_model, densesvmlib), Int32, (Ptr{UInt8},Ptr{svm_model}), modelfile, pmodel)
+		pmodel = ccall((:svm_train, densesvmlib), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	end
-	return (pmodel, timeElapsed, success)
+	return pmodel
 end
 
-function predictSVM(ptest, pmodel; dense::Bool=false)
-	test = unsafe_load(ptest)
-	amountdone = 0
-	target = Array(Float64, test.l)
-	predicted = Array(Float64, test.l)
-	#   println("checkpoint 1")
-	timeElapsed2 = @elapsed for i=1:test.l
-		target[i] = unsafe_load(test.y, i)
-		point = unsafe_load(test.x, i)
+function predict(model::svm_model, x::Array; dense::Bool=false)
+	(nodes, nodeptrs) = mapnodes(x)
+	nx = size(instances, 2)
+	predicted = Array(Float64, nx)
+	for i = 1:nx
 		if !dense
-			pred = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
+			pred = ccall((:svm_predict, svmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pointer(model), nodeptrs[i])
 		else
-			pred = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
+			pred = ccall((:svm_predict, densesvmlib), Float64, (Ptr{svm_model}, Ptr{svm_node}), pointer(model), nodeptrs[i])
 		end
 		predicted[i] = pred
 	end
-	return predicted, target, test, timeElapsed2
-end
-
-function resultanalysis(predicted, target, param, outfolder, timeElapsed, timeElapsed2)
-	error = sum((predicted .- target).*(predicted .- target))
-	sump = sum(predicted)
-	sumt = sum(target)
-	sumpp = sum(predicted .* predicted)
-	sumtt = sum(target .* target)
-	sumpt = sum(predicted .* target)
-	total = size(predicted, 2)
-
-	if param.svm_type==NU_SVR || param.svm_type==EPSILON_SVR
-		sqErr = error/total
-		sqCorr = ((total*sumpt-sump*sumt)*(total*sumpt-sump*sumt))/((total*sumpp-sump*sump)*(total*sumtt-sumt*sumt))
-		println("Mean squared error =", trunc(sqErr, 2), "(regression)")
-		println("Squared correlation coefficient =", trunc(sqCorr, 6), "(regression)")
-	end
-
-	writecsv(joinpath(outfolder, "predicted.csv"), predicted)
-	writecsv(joinpath(outfolder, "target.csv"), target)
-	f = open(joinpath(outfolder, "info"), "a")
-	write(f, string("Mean squared error = ", trunc(sqErr, 2), "(regression)\n",
-		"Squared correlation coefficient = ", trunc(sqCorr, 6), "(regression)\n",
-		"time to train = ", timeElapsed, " seconds\n",
-		"time to predict = ", timeElapsed2, " seconds\n"
-		))
-	close(f)
-	return sqErr, sqCorr
-end
-
-function runSVM(trailfile, testfile, outfolder, modelfile; options::String="", dense::Bool=false)
-	pparam, param = params_from_opts(options)
-	pprob, prob = csvreadproblem(trailfile)
-
-	pmodel, timeElapsed, success = trainSVM(pprob, pparam, dense=dense)
-
-	ptest = readproblem(testfile)
-	predicted, target, test, timeElapsed2 = predictSVM(ptest, pmodel, dense=dense)
-
-	resultanalysis(predicted, target, param, test, outfolder, timeElapsed, timeElapsed2)
+	return predicted
 end
 
 end
