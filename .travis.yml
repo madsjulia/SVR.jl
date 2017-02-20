@@ -1,0 +1,14 @@
+language: julia
+os:
+  - osx
+  - linux
+julia:
+  - 0.5
+notifications:
+  email: false
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone(pwd());'
+  - julia -e 'Pkg.build("SVR"); Pkg.test("SVR"; coverage=true)'
+after_success:
+  - julia -e 'cd(Pkg.dir("SVR")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

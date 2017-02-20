@@ -2,7 +2,7 @@ module SVR
 
 import JLD
 
-include("extras.jl")
+# include("extras.jl")
 
 verbosity = false
 
@@ -149,12 +149,13 @@ function mapnodes(x::Array)
 		for j=1:nfeatures
 			nodes[j, i] = svm_node(Cint(j), Float64(x[j, i]))
 		end
-		nodes[nfeatures + 1, i] = svm_node(Cint(-1), 0.0)
-		nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
+		nodes[nfeatures + 1, i] = svm_node(Cint(-1), NaN)
+		nodeptrs[i] = pointer(nodes, (i - 1) * (nfeatures + 1) +1)
 	end
 	(nodes, nodeptrs)
 end
 
+"Train based on a libSVM model"
 function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, p::Float64=0.1, cache_size::Float64=100.0, eps::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=p, cache_size=cache_size, eps=eps, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
@@ -163,6 +164,7 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	return pmodel
 end
 
+"Predict based on a libSVM model"
 function predict(pmodel::Ptr{svm_model}, x::Array)
 	(nodes, nodeptrs) = mapnodes(x)
 	nx = size(x, 2)
@@ -174,16 +176,19 @@ function predict(pmodel::Ptr{svm_model}, x::Array)
 	return y
 end
 
+"Save a libSVM model"
 function savemodel(pmodel::Ptr{svm_model}, filename::String)
-	ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{SVMModel}), file, pmodel)
+	ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel)
 	nothing
 end
 
+"Free a libSVM model"
 function freemodel(pmodel::Ptr{svm_model})
 	ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel)
 	nothing
 end
 
+"Read a libSVM file"
 function readlibsvmfile(file::String)
 	d = readdlm(file)
 	(o, p) = size(d)
