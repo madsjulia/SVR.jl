@@ -43,19 +43,21 @@ SVR.freemodel(pmodel)
 MADS
 ====
 
-MADS is an integrated open-source high-performance computational (HPC) framework written in [Julia](http://julialang.org) performing a wide range of data- and model-based analyses:
+MADS is an integrated open-source high-performance computational (HPC) framework written in [Julia](http://julialang.org).
+MADS can execute a wide range of data- and model-based analyses:
 
 * Sensitivity Analysis
 * Parameter Estimation
 * Model Inversion and Calibration
 * Uncertainty Quantification
-* Model Selection and Averaging
+* Model Selection and Model Averaging
 * Model Reduction and Surrogate Modeling
 * Machine Learning and Blind Source Separation
-* Decision Support
+* Decision Analysis and Support
 
-MADS utilizes adaptive rules and techniques which allows the analyses to be performed with minimum user input.
-The code provides a series of alternative algorithms to perform each type of data- and model-based analyses.
+MADS has been tested to perform HPC simulations on a wide-range multi-processor clusters and parallel enviromentls (Moab, Slurm, etc.).
+MADS utilizes adaptive rules and techniques which allows the analyses to be performed with a minimum user input.
+The code provides a series of alternative algorithms to execute each type of data- and model-based analyses.
 
 Documentation
 =============
