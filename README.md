@@ -7,9 +7,38 @@ SVR
 
 [![Coverage Status](https://coveralls.io/repos/madsjulia/SVR.jl/badge.svg?branch=master)](https://coveralls.io/r/madsjulia/SVR.jl?branch=master)
 
-This package perfoms Support Vector Regression (SVR) analysis using [libSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) library
+This package perfoms Support Vector Regression (SVR) analysis using [libSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/) library in [Julia](http://julialang.org).
 
 SVR is a module of MADS.
+
+Installation
+------------
+
+```julia
+Pkg.add("SVR")
+```
+
+Example
+-------
+
+```julia
+import SVR
+
+# read a libSVM input file
+x, y = SVR.readlibsvmfile("mg.libsvm")
+
+# train a libSVM model
+pmodel = SVR.train(y, x');
+
+# train based on the libSVM model
+y_pr = SVR.predict(pmodel, x');
+
+# save the libSVM model
+SVR.savemodel(pmodel, "mg.model")
+
+# free the memory allocation of the libSVM model
+SVR.freemodel(pmodel)
+```
 
 MADS
 ====
@@ -34,38 +63,13 @@ Documentation
 All the available MADS modules and functions are described at [madsjulia.github.io](http://madsjulia.github.io/Mads.jl)
 
 Installation
-============
-
-After starting Julia, execute:
-
-```
-Pkg.add("MADS")
-Pkg.add("SVR")
-```
-
-Simple example
---------------
+------------
 
 ```julia
-import SVR
-
-# read a libSVM input file
-x, y = SVR.readlibsvmfile("mg.libsvm")
-
-# train a libSVM model
-pmodel = SVR.train(y, x');
-
-# train based on the libSVM model
-y_pr = SVR.predict(pmodel, x');
-
-# save the libSVM model
-SVR.savemodel(pmodel, "mg.model")
-
-# free the memory allocation of the libSVM model
-SVR.freemodel(pmodel)
+Pkg.add("Mads")
 ```
 
-Installation of SVR/MADS behind a firewall
+Installation of MADS behind a firewall
 ------------------------------
 
 Julia uses git for package management. Add in the `.gitconfig` file in your home directory:
