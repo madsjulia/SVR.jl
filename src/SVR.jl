@@ -2,8 +2,6 @@ module SVR
 
 import JLD
 
-# include("extras.jl")
-
 verbosity = false
 
 immutable svm_node

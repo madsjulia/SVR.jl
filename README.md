@@ -14,17 +14,19 @@ SVR is a module of MADS.
 MADS
 ====
 
-MADS is an open-source [Julia](http://julialang.org) code designed as an integrated high-performance computational framework performing a wide range of model-based analyses:
+MADS is an integrated open-source high-performance computational (HPC) framework written in [Julia](http://julialang.org) performing a wide range of data- and model-based analyses:
 
 * Sensitivity Analysis
 * Parameter Estimation
 * Model Inversion and Calibration
 * Uncertainty Quantification
 * Model Selection and Averaging
+* Model Reduction and Surrogate Modeling
+* Machine Learning and Blind Source Separation
 * Decision Support
 
 MADS utilizes adaptive rules and techniques which allows the analyses to be performed with minimum user input.
-The code provides a series of alternative algorithms to perform each type of model analyses.
+The code provides a series of alternative algorithms to perform each type of data- and model-based analyses.
 
 Documentation
 =============
@@ -37,10 +39,33 @@ Installation
 After starting Julia, execute:
 
 ```
+Pkg.add("MADS")
 Pkg.add("SVR")
 ```
 
-Installation of MADS behind a firewall
+Simple example
+--------------
+
+```julia
+import SVR
+
+# read a libSVM input file
+x, y = SVR.readlibsvmfile("mg.libsvm")
+
+# train a libSVM model
+pmodel = SVR.train(y, x');
+
+# train based on the libSVM model
+y_pr = SVR.predict(pmodel, x');
+
+# save the libSVM model
+SVR.savemodel(pmodel, "mg.model")
+
+# free the memory allocation of the libSVM model
+SVR.freemodel(pmodel)
+```
+
+Installation of SVR/MADS behind a firewall
 ------------------------------
 
 Julia uses git for package management. Add in the `.gitconfig` file in your home directory:
