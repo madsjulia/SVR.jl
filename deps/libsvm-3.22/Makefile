@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wconversion -O3 -fPIC
 SHVER = 2
 OS = $(shell uname)
 
-all: svm-train svm-predict svm-scale 
+all: svm-train svm-predict svm-scale
 
 lib: svm.o densesvm.o
 	if [ "$(OS)" = "Darwin" ]; then \
@@ -12,13 +12,6 @@ lib: svm.o densesvm.o
 		SHARED_LIB_FLAG="-shared -Wl,-soname,libsvm.so.$(SHVER)"; \
 	fi; \
 	$(CXX) $${SHARED_LIB_FLAG} svm.o -o libsvm.so.$(SHVER)
-	if [ "$(OS)" = "Darwin" ]; then \
-		SHARED_LIB_FLAG="-dynamiclib -Wl,-install_name,libdensesvm.so.$(SHVER)"; \
-	else \
-		SHARED_LIB_FLAG="-shared -Wl,-soname,libsvm.so.$(SHVER)"; \
-	fi; \
-	$(CXX) $${SHARED_LIB_FLAG} densesvm.o -o libdensesvm.so.$(SHVER)
-
 svm-predict: svm-predict.c svm.o
 	$(CXX) $(CFLAGS) svm-predict.c svm.o -o svm-predict -lm
 svm-train: svm-train.c svm.o
