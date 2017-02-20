@@ -70,7 +70,7 @@ let libsvm = C_NULL
 	global get_lib
 	function get_lib()
 		if libsvm == C_NULL
-			libpath = joinpath(Pkg.dir("SVR"), "deps")
+			libpath = joinpath(Pkg.dir("SVR"), "deps", "libsvm-3.22")
 			libfile = is_windows() ? joinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
 			libsvm = Libdl.dlopen(libfile)
 			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Void, (Ptr{Void},), cfunction(liboutput, Void, (Ptr{UInt8},)))
