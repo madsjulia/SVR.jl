@@ -30,7 +30,7 @@ x, y = SVR.readlibsvmfile("mg.libsvm")
 # train a libSVM model
 pmodel = SVR.train(y, x');
 
-# train based on the libSVM model
+# predict based on the libSVM model
 y_pr = SVR.predict(pmodel, x');
 
 # save the libSVM model
