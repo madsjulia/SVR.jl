@@ -71,7 +71,7 @@ let libsvm = C_NULL
 	function get_lib()
 		if libsvm == C_NULL
 			libpath = joinpath(Pkg.dir("SVR"), "deps")
-			libfile = is_windows() ? oinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
+			libfile = is_windows() ? joinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
 			libsvm = Libdl.dlopen(libfile)
 			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Void, (Ptr{Void},), cfunction(liboutput, Void, (Ptr{UInt8},)))
 		end
@@ -79,7 +79,7 @@ let libsvm = C_NULL
 	end
 end
 
-# helper
+# catch lib output
 function liboutput(str::Ptr{UInt8})
 	if verbosity
 		print(unsafe_string(str))
