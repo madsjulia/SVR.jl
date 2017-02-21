@@ -33,6 +33,12 @@ immutable svm_parameter
 	probability::Cint
 end
 
+immutable svm_returnvalue
+	pmodel::Any
+	param::svm_parameter
+	problem::svm_problem
+end
+
 immutable svm_model
 	param::svm_parameter
 	nr_class::Cint
@@ -159,7 +165,7 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	pmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
-	return pmodel
+	return svm_returnvalue(pmodel, param, prob)
 end
 
 "Predict based on a libSVM model"
