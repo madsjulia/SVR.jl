@@ -33,8 +33,8 @@ immutable svm_parameter
 	probability::Cint
 end
 
-immutable svm_returnvalue
-	pmodel::Any
+immutable svm_modelall
+	plibsvmmodel::Any
 	param::svm_parameter
 	problem::svm_problem
 end
@@ -74,7 +74,7 @@ let libsvm = C_NULL
 	global get_lib
 	function get_lib()
 		if libsvm == C_NULL
-			libpath = joinpath(Pkg.dir("SVR"), "deps", "libsvm-3.22")
+			libpath = joinpath(dirname(@__FILE__), "..", "deps", "libsvm-3.22")
 			libfile = is_windows() ? joinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
 			libsvm = Libdl.dlopen(libfile)
 			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Void, (Ptr{Void},), cfunction(liboutput, Void, (Ptr{UInt8},)))
@@ -164,31 +164,31 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=p, cache_size=cache_size, eps=eps, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
-	pmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
-	return svm_returnvalue(pmodel, param, prob)
+	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
+	return svm_modelall(plibsvmmodel, param, prob)
 end
 
 "Predict based on a libSVM model"
-function predict(pmodel::Ptr{svm_model}, x::Array)
+function predict(pmodel::svm_modelall, x::Array)
 	(nodes, nodeptrs) = mapnodes(x)
 	nx = size(x, 2)
 	y = Array(Float64, nx)
 	for i = 1:nx
-		p = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, nodeptrs[i])
+		p = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
 		y[i] = p
 	end
 	return y
 end
 
 "Save a libSVM model"
-function savemodel(pmodel::Ptr{svm_model}, filename::String)
-	ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel)
+function savemodel(pmodel::svm_modelall, filename::String)
+	ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
 	nothing
 end
 
 "Free a libSVM model"
-function freemodel(pmodel::Ptr{svm_model})
-	ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel)
+function freemodel(pmodel::svm_modelall)
+	ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel.plibsvmmodel)
 	nothing
 end
 

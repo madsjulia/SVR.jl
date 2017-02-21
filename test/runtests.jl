@@ -1,9 +1,7 @@
 import SVR
 
-@show i
 x, y = SVR.readlibsvmfile("mg.libsvm")
-rv = SVR.train(y, x');
-pmodel = rv.pmodel
+pmodel = SVR.train(y, x');
 y_pr = SVR.predict(pmodel, x');
 # writedlm("mg.result", y_pr)
 y_true = vec(readdlm("mg.result"))
