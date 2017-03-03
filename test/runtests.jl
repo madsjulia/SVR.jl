@@ -1,6 +1,6 @@
 import SVR
 
-cd(joinpath(Pkg.dir("SVR"), "test"))
+cd(dirname(@__FILE__))
 x, y = SVR.readlibsvmfile("mg.libsvm")
 pmodel = SVR.train(y, x');
 y_pr = SVR.predict(pmodel, x');
