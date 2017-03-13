@@ -172,7 +172,7 @@ end
 function predict(pmodel::svm_modelall, x::Array)
 	(nodes, nodeptrs) = mapnodes(x)
 	nx = size(x, 2)
-	y = Array(Float64, nx)
+	y = Array{Float64}(nx)
 	for i = 1:nx
 		p = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
 		y[i] = p
@@ -196,7 +196,7 @@ end
 function readlibsvmfile(file::String)
 	d = readdlm(file)
 	(o, p) = size(d)
-	x = Array(Float64, o, p - 1)
+	x = Array{Float64}(o, p - 1)
 	y = []
 	try
 		y = Float64.(d[:,1])

@@ -260,7 +260,7 @@ function do_cross_validation(pprob, pparam, nr_fold)
 	param = unsafe_load(pparam)
 	total_correct = 0
 	total_error = sumv = sumy = sumvv = sumyy = sumvy = 0.0
-	target = Array(Float64, prob.l)
+	target = Array{Float64}(prob.l)
 
 	ccall((:svm_cross_validation, svmlib), Void, (Ptr{svm_problem}, Ptr{svm_parameter}, Cint, Ptr{Float64}), pprob, pparam, nr_fold, pointer(target))
 
@@ -323,8 +323,8 @@ function predictSVM(ptest, outfile, pmodel; dense=false)
 	f = open(outfile, "a")
 
 	amountdone = 0
-	target = Array(Float64, test.l)
-	predicted = Array(Float64, test.l)
+	target = Array{Float64}(test.l)
+	predicted = Array{Float64}(test.l)
 	barlen = getbar()
 #   println("checkpoint 1")
 	timeElapsed2 = @elapsed for i=1:test.l
@@ -396,10 +396,10 @@ function predictSVMCSV(testfile, outfile, pmodel; dense=false)
 
 	templ = 100000
 	amountdone = 0
-	finaltarget = Array(Float64, 0)
-	finalpredicted = Array(Float64, 0)
-	target = Array(Float64, templ)
-	predicted = Array(Float64, templ)
+	finaltarget = Array{Float64}(0)
+	finalpredicted = Array{Float64}(0)
+	target = Array{Float64}(templ)
+	predicted = Array{Float64}(templ)
 	a = "derp"
 	done = false
 	endi = 0
@@ -459,10 +459,10 @@ function predictSVMJLD(testdirectory, outfile, pmodel; dense=false)
 
 	templ = 0
 	amountdone = 0
-	finaltarget = Array(Float64, 0)
-	finalpredicted = Array(Float64, 0)
-	target = Array(Float64, templ)
-	predicted = Array(Float64, templ)
+	finaltarget = Array{Float64}(0)
+	finalpredicted = Array{Float64}(0)
+	target = Array{Float64}(templ)
+	predicted = Array{Float64}(templ)
 
 	dirs = readdir(testdirectory)
 
@@ -471,7 +471,7 @@ function predictSVMJLD(testdirectory, outfile, pmodel; dense=false)
 	d = JLD.load(string(testdirectory, dir))
 	data = d[collect(keys(d))[1]]
 	target = data[:, 1]
-	predicted = Array(Float64, size(target)...)
+	predicted = Array{Float64}(size(target)...)
 	features = data[:, 2:end]'
 	nodefeatures, pna = nodes(features)
 	templ = size(target, 1)

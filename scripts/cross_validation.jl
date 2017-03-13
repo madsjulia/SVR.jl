@@ -3,10 +3,10 @@ function do_cross_validation(pprob, pparam, nr_fold)
   param = unsafe_load(pparam)
   total_correct = 0
   total_error = sumv = sumy = sumvv = sumyy = sumvy = 0.0
-  target = Array(Float64, prob.l)
-  
+  target = Array{Float64}(prob.l)
+
   ccall((:svm_cross_validation, svmlib), Void, (Ptr{svm_problem}, Ptr{svm_parameter}, Cint, Ptr{Float64}), pprob, pparam, nr_fold, pointer(target))
-  
+
   if param.svm_type == EPSILON_SVR || param.svm_type == NU_SVR
     for i=1:prob.l
       y = prob.y[i]
@@ -30,5 +30,5 @@ function do_cross_validation(pprob, pparam, nr_fold)
       end
     end
   end
-  
+
 end

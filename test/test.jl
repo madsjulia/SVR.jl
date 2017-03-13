@@ -23,7 +23,7 @@ if !isdir(string(this_test_folder_path, "/../examples/testjlds"))
 end
 
 function f_cvs(numPoints, ar, br, cr, nr, t, outJLD)
-	arr = Array(Float64, 5*numPoints, 6)
+	arr = Array{Float64}(5*numPoints, 6)
 	for i=1:numPoints
 		a_d = Distributions.Uniform((ar[1]), (ar[end]))
 		b_d = Distributions.Uniform((br[1]), (br[end]))

@@ -8,7 +8,7 @@ dirs = dirs[1001:2000]
 tempd = dirs[1]
 d = load(string("data_svr/", tempd))
 
-full = Array(Float32, size(dirs, 1)*11, size(d[collect(keys(d))[2]]', 2)+1)
+full = Array{Float32}(size(dirs, 1)*11, size(d[collect(keys(d))[2]]', 2)+1)
 
 for i=1:size(dirs, 1)
 	print(".")
@@ -16,7 +16,7 @@ for i=1:size(dirs, 1)
 	d = load(string("data_svr/", dir))
 	features = d[collect(keys(d))[2]]'
 	obs = d[collect(keys(d))[1]][1:11]
-	t = Array(Float64, size(obs, 1), size(features, 2)+1)
+	t = Array{Float64}(size(obs, 1), size(features, 2)+1)
 	t[:, 1] = obs
 
 	for j=1:size(t, 1)

@@ -15,7 +15,7 @@ immutable svm_parameter
   degree::Cint
   gamma::Cdouble
   coef0::Cdouble
-  
+
   cache_size::Cdouble
   eps::Cdouble
   C::Cdouble
@@ -39,10 +39,10 @@ immutable svm_model
   probA::Ptr{Cdouble}
   probB::Ptr{Cdouble}
   sv_indices::Ptr{Cint}
-  
+
   label::Ptr{Cint}
   nSV::Ptr{Cint}
-  
+
   free_sv::Cint
 end
 
@@ -93,7 +93,7 @@ function fillparam(;svm_type=C_SVC,
 			  p,
 			  shrinking,
 			  probability)
-    
+
     return param
 end
 
@@ -154,8 +154,8 @@ function test(outfile, pmodel)
   end
 
   amountdone = 0
-  target = Array(Float64, test.l)
-  predicted = Array(Float64, test.l)
+  target = Array{Float64}(test.l)
+  predicted = Array{Float64}(test.l)
   barlen = getbar()
   timeElapsed2 = @elapsed for i=1:test.l
       if i%round(Int, test.l/barlen)==0
@@ -189,9 +189,9 @@ function test(outfile, pmodel)
 	  end
 	  print("|")
       end
-      
-      
-      
+
+
+
       target[i] = unsafe_load(test.y, i)
       point = unsafe_load(test.x, i)
       pred = ccall((:svm_predict, "/n/srv/vessg/Downloads/libsvm-3.21/libsvm.so.2"), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
@@ -295,6 +295,6 @@ function run(trailfile, testfile, outfolder, modelfile, options...)
 
   predicted = test(outfile, pmodel)
 
-  resultanalysis(predicted, target, param)  
+  resultanalysis(predicted, target, param)
 
 end

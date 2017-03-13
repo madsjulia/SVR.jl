@@ -17,7 +17,7 @@ immutable svm_parameter
   degree::Cint
   gamma::Cdouble
   coef0::Cdouble
-  
+
   cache_size::Cdouble
   eps::Cdouble
   C::Cdouble
@@ -41,10 +41,10 @@ immutable svm_model
   probA::Ptr{Cdouble}
   probB::Ptr{Cdouble}
   sv_indices::Ptr{Cint}
-  
+
   label::Ptr{Cint}
   nSV::Ptr{Cint}
-  
+
   free_sv::Cint
 end
 
@@ -73,7 +73,7 @@ cd(shell_path)
 function convertSVM(infile, outfile)
   fin = open(infile, "r")
   fout = open(outfile, "a")
-  
+
   while true
     a = readline(fin)
     if a == ""
@@ -83,10 +83,10 @@ function convertSVM(infile, outfile)
     a = map(x->Float64(parse(x)), a)
     printout(fout, a)
   end
-  
+
   close(fin)
   close(fout)
-  
+
 end
 
 function nodes(instances)
@@ -182,7 +182,7 @@ function fillparam(;svm_type=C_SVC,
 			  p,
 			  shrinking,
 			  probability)
-    
+
     return param
 end
 
@@ -236,10 +236,10 @@ function do_cross_validation(pprob, pparam, nr_fold)
   param = unsafe_load(pparam)
   total_correct = 0
   total_error = sumv = sumy = sumvv = sumyy = sumvy = 0.0
-  target = Array(Float64, prob.l)
-  
+  target = Array{Float64}(prob.l)
+
   ccall((:svm_cross_validation, svmlib), Void, (Ptr{svm_problem}, Ptr{svm_parameter}, Cint, Ptr{Float64}), pprob, pparam, nr_fold, pointer(target))
-  
+
   if param.svm_type == EPSILON_SVR || param.svm_type == NU_SVR
     for i=1:prob.l
       y = unsafe_load(prob.y, i)
@@ -294,8 +294,8 @@ function predictSVM(ptest, outfile, pmodel; dense=false)
   f = open(outfile, "a")
 
   amountdone = 0
-  target = Array(Float64, test.l)
-  predicted = Array(Float64, test.l)
+  target = Array{Float64}(test.l)
+  predicted = Array{Float64}(test.l)
   barlen = getbar()
 #   println("checkpoint 1")
   timeElapsed2 = @elapsed for i=1:test.l
@@ -330,9 +330,9 @@ function predictSVM(ptest, outfile, pmodel; dense=false)
 	  end
 	  print("|")
       end
-      
+
 #       println("checkpoint 2")
-      
+
       target[i] = unsafe_load(test.y, i)
       point = unsafe_load(test.x, i)
       if !dense
@@ -364,13 +364,13 @@ function predictSVM2(testfile, outfile, pmodel; dense=false)
   println("\n\nbegin predictions\n")
   ftest = open(testfile, "r")
   f = open(outfile, "a")
-  
+
   templ = 100000
   amountdone = 0
-  finaltarget = Array(Float64, 0)
-  finalpredicted = Array(Float64, 0)
-  target = Array(Float64, templ)
-  predicted = Array(Float64, templ)
+  finaltarget = Array{Float64}(0)
+  finalpredicted = Array{Float64}(0)
+  target = Array{Float64}(templ)
+  predicted = Array{Float64}(templ)
   a = "derp"
   done = false
   endi = 0
@@ -430,11 +430,11 @@ function predictSVM3(testdirectory, outfile, pmodel; dense=false)
 
   templ = 0
   amountdone = 0
-  finaltarget = Array(Float64, 0)
-  finalpredicted = Array(Float64, 0)
-  target = Array(Float64, templ)
-  predicted = Array(Float64, templ)
-  
+  finaltarget = Array{Float64}(0)
+  finalpredicted = Array{Float64}(0)
+  target = Array{Float64}(templ)
+  predicted = Array{Float64}(templ)
+
   dirs = readdir(testdirectory)
 
   timeElapsed2 = @elapsed for j=1:size(dirs, 1)
@@ -442,7 +442,7 @@ function predictSVM3(testdirectory, outfile, pmodel; dense=false)
     d = load(string(testdirectory, dir))
     data = d[collect(keys(d))[1]]
     target = data[:, 1]
-    predicted = Array(Float64, size(target)...)
+    predicted = Array{Float64}(size(target)...)
     features = data[:, 2:end]'
     nodefeatures, pna = nodes(features)
     templ = size(target, 1)

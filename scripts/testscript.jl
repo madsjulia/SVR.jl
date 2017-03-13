@@ -15,7 +15,7 @@ immutable svm_parameter
   degree::Cint
   gamma::Cdouble
   coef0::Cdouble
-  
+
   cache_size::Cdouble
   eps::Cdouble
   C::Cdouble
@@ -39,10 +39,10 @@ immutable svm_model
   probA::Ptr{Cdouble}
   probB::Ptr{Cdouble}
   sv_indices::Ptr{Cint}
-  
+
   label::Ptr{Cint}
   nSV::Ptr{Cint}
-  
+
   free_sv::Cint
 end
 
@@ -132,7 +132,7 @@ outpathgeneral = "data/output/"
 pprob = ccall((:read_problem, "/n/srv/vessg/Downloads/libsvm-3.21/test.so"), Ptr{svm_problem}, (Ptr{UInt8},), trailfile)
 prob = unsafe_load(pprob)
 pf = prob.y
-labels = Array(Float64, prob.l)
+labels = Array{Float64}(prob.l)
 for i=1:prob.l
     labels[i] = unsafe_load(pf, i)
 end
@@ -170,12 +170,12 @@ function fillparam(;svm_type=C_SVC,
 			  p,
 			  shrinking,
 			  probability)
-    
+
     return param
 end
 
 params = Array(svm_parameter, 0)
-push!(params, 
+push!(params,
 fillparam(svm_type=EPSILON_SVR, C=8096.0, gamma=1.0, eps=0.03125),
 
 #=fillparam(svm_type=EPSILON_SVR, C=1000.0, gamma=0.01, eps=0.1),
@@ -262,8 +262,8 @@ function getbar()
 end
 
 amountdone = 0
-target = Array(Float64, test.l)
-predict = Array(Float64, test.l)
+target = Array{Float64}(test.l)
+predict = Array{Float64}(test.l)
 barlen = getbar()
 timeElapsed2 = @elapsed for i=1:test.l
     if i%round(Int, test.l/barlen)==0
@@ -297,9 +297,9 @@ timeElapsed2 = @elapsed for i=1:test.l
 	end
 	print("|")
     end
-    
-    
-    
+
+
+
     target[i] = unsafe_load(test.y, i)
     point = unsafe_load(test.x, i)
     pred = ccall((:svm_predict, "/n/srv/vessg/Downloads/libsvm-3.21/libsvm.so.2"), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel, point)
