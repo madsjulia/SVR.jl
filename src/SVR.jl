@@ -147,8 +147,8 @@ end
 function mapnodes(x::Array)
 	nfeatures = size(x, 1)
 	ninstances = size(x, 2)
-	nodeptrs = Array(Ptr{svm_node}, ninstances)
-	nodes = Array(svm_node, nfeatures + 1, ninstances)
+	nodeptrs = Array{Ptr{svm_node}}(ninstances)
+	nodes = Array{svm_node}(nfeatures + 1, ninstances)
 	for i=1:ninstances
 		for j=1:nfeatures
 			nodes[j, i] = svm_node(Cint(j), Float64(x[j, i]))
