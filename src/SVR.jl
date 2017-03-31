@@ -33,7 +33,7 @@ immutable svm_parameter
 	probability::Cint
 end
 
-immutable svm_modelall
+immutable svmmodel
 	plibsvmmodel::Any
 	param::svm_parameter
 	problem::svm_problem
@@ -167,11 +167,11 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
-	return svm_modelall(plibsvmmodel, param, prob)
+	return svmmodel(plibsvmmodel, param, prob)
 end
 
 "Predict based on a libSVM model"
-function predict(pmodel::svm_modelall, x::Array)
+function predict(pmodel::svmmodel, x::Array)
 	(nodes, nodeptrs) = mapnodes(x)
 	nx = size(x, 2)
 	y = Array{Float64}(nx)
@@ -190,17 +190,17 @@ function loadmodel(filename::String)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
-	return svm_modelall(plibsvmmodel, param, prob)
+	return svmmodel(plibsvmmodel, param, prob)
 end
 
 "Save a libSVM model"
-function savemodel(pmodel::svm_modelall, filename::String)
+function savemodel(pmodel::svmmodel, filename::String)
 	ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
 	nothing
 end
 
 "Free a libSVM model"
-function freemodel(pmodel::svm_modelall)
+function freemodel(pmodel::svmmodel)
 	ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel.plibsvmmodel)
 	nothing
 end
