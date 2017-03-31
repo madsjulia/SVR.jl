@@ -107,6 +107,7 @@ end
 @cachedsym svm_train
 @cachedsym svm_predict
 @cachedsym svm_save_model
+@cachedsym svm_load_model
 @cachedsym svm_free_model_content
 
 function mapparam(;
@@ -164,7 +165,7 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=p, cache_size=cache_size, eps=eps, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
-	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem},Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
+	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	return svm_modelall(plibsvmmodel, param, prob)
 end
 
@@ -178,6 +179,17 @@ function predict(pmodel::svm_modelall, x::Array)
 		y[i] = p
 	end
 	return y
+end
+
+"Load a libSVM model"
+function loadmodel(filename::String)
+	param = mapparam()
+	x = Array(Float64, 0)
+	y = Array(Float64, 0)
+	(nodes, nodeptrs) = mapnodes(x)
+	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
+	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
+	return svm_modelall(plibsvmmodel, param, prob)
 end
 
 "Save a libSVM model"
