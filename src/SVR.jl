@@ -162,6 +162,7 @@ end
 
 "Train based on a libSVM model"
 function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, p::Float64=0.1, cache_size::Float64=100.0, eps::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+	@assert length(y) == size(x, 2)
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=p, cache_size=cache_size, eps=eps, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))

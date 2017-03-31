@@ -1,5 +1,6 @@
 import SVR
 
+currentdir = pwd()
 cd(dirname(@__FILE__))
 
 x, y = SVR.readlibsvmfile("mg.libsvm")
@@ -16,3 +17,5 @@ y_pr = SVR.predict(pmodel, x');
 y_true = vec(readdlm("mg.result"))
 @assert maximum(abs.(y_pr .- y_true)) < 1e-4
 SVR.freemodel(pmodel)
+
+cd(currentdir)
