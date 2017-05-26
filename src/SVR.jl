@@ -1,6 +1,7 @@
 module SVR
 
 import JLD
+import DocumentFunction
 
 verbosity = false
 
