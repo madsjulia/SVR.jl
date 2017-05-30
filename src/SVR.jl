@@ -85,7 +85,12 @@ let libsvm = C_NULL
 	end
 end
 
-# catch lib output
+"""
+catch lib output
+
+$(DocumentFunction.documentfunction(liboutput;
+argtext=Dict("str"=>"string")))
+"""
 function liboutput(str::Ptr{UInt8})
 	if verbosity
 		print(unsafe_string(str))
@@ -112,6 +117,29 @@ end
 @cachedsym svm_load_model
 @cachedsym svm_free_model_content
 
+"""
+$(DocumentFunction.documentfunction(mapparam;
+keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
+            "kernel_type"=>"kernel type [default=`RBF`]",
+            "degree"=>"degree of the polynomial kernel [default=`3`]",
+            "gamma"=>"coefficient for RBF, POLY and SIGMOND kernel types [default=`1.0`]",
+            "coef0"=>"independent term in kernel function; important only in POLY and  SIGMOND kernel types [default=`0.0`]",
+            "C"=>"cost; penalty parameter of the error term [default=`1.0`]",
+            "nu"=>"upper bound on the fraction of training errors / lower bound of the fraction of support vectors; acceptable range (0, 1]; applied if NU_SVR model [default=`0.5`]",
+            "p"=>"epsilon for EPSILON_SVR [default=`0.1`]",
+            "cache_size"=>"size of the kernel cache [default=`100.0`]",
+            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value
+[default=`0.001`]",
+            "shrinking"=>"apply shrinking heuristic [default=`true`]",
+            "probability"=>"train to estimate probabilities [default=`false`]",
+            "nr_weight"=>"[default=`0`]",
+            "weight_label"=>"[default=`Ptr{Cint}(0x0000000000000000)`]",
+            "weight"=>"[default=`Ptr{Cdouble}(0x0000000000000000)`]")))
+
+Returns:
+
+- parameter
+"""
 function mapparam(;
 	svm_type::Cint=EPSILON_SVR,
 	kernel_type::Cint=RBF,
@@ -147,6 +175,10 @@ function mapparam(;
 	return param
 end
 
+"""
+$(DocumentFunction.documentfunction(mapnodes;
+argtext=Dict("x"=>"")))
+"""
 function mapnodes(x::Array)
 	nfeatures = size(x, 1)
 	ninstances = size(x, 2)
@@ -162,7 +194,30 @@ function mapnodes(x::Array)
 	(nodes, nodeptrs)
 end
 
-"Train based on a libSVM model"
+"""
+Train based on a libSVM model
+
+$(DocumentFunction.documentfunction(train;
+argtext=Dict("y"=>"",
+            "x"=>""),
+keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
+            "kernel_type"=>"kernel type [default=`RBF`]",
+            "degree"=>"degree of the polynomial kernel [default=`3`]",
+            "gamma"=>"coefficient for RBF, POLY and SIGMOND kernel types [default=`1/size(x, 1)`]",
+            "coef0"=>"independent term in kernel function; important only in POLY and  SIGMOND kernel types [default=`0.0`]",
+            "C"=>"cost; penalty parameter of the error term [default=`1.0`]",
+            "nu"=>"upper bound on the fraction of training errors / lower bound of the fraction of support vectors; acceptable range (0, 1]; applied if NU_SVR model [default=`0.5`]",
+            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`0.1`]",
+            "cache_size"=>"size of the kernel cache [default=`100.0`]",
+            "tol"=>"tolerance of termination criterion [default=`0.001`]",
+            "shrinking"=>"apply shrinking heuristic [default=`true`]",
+            "probability"=>"train to estimate probabilities [default=`false`]",
+            "verbose"=>"verbose output [default=`false`]")))
+
+Returns:
+
+- trained result
+"""
 function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
@@ -172,7 +227,17 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 
-"Predict based on a libSVM model"
+"""
+Predict based on a libSVM model
+
+$(DocumentFunction.documentfunction(predict;
+argtext=Dict("pmodel"=>"the model that prediction is based on",
+            "x"=>"")))
+
+Return:
+
+- prediction
+"""
 function predict(pmodel::svmmodel, x::Array)
 	nx = size(x, 2)
 	y = Array{Float64}(nx)
@@ -188,7 +253,16 @@ function predict(pmodel::svmmodel, x::Array)
 	return y
 end
 
-"Load a libSVM model"
+"""
+Load a libSVM model
+
+$(DocumentFunction.documentfunction(loadmodel;
+argtext=Dict("filename"=>"input file name")))
+
+Returns:
+
+- libSVM model
+"""
 function loadmodel(filename::String)
 	param = mapparam()
 	x = Array(Float64, 0)
@@ -199,7 +273,17 @@ function loadmodel(filename::String)
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 
-"Save a libSVM model"
+"""
+Save a libSVM model
+
+$(DocumentFunction.documentfunction(savemodel;
+argtext=Dict("pmodel"=>"svm model",
+            "filename"=>"output file name")))
+
+Dumps:
+
+- file with saved model
+"""
 function savemodel(pmodel::svmmodel, filename::String)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
 		ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
@@ -207,7 +291,12 @@ function savemodel(pmodel::svmmodel, filename::String)
 	nothing
 end
 
-"Free a libSVM model"
+"""
+Free a libSVM model
+
+$(DocumentFunction.documentfunction(freemodel;
+argtext=Dict("pmodel"=>"svm model")))
+"""
 function freemodel(pmodel::svmmodel)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
 		ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel.plibsvmmodel)
@@ -216,7 +305,16 @@ function freemodel(pmodel::svmmodel)
 	nothing
 end
 
-"Read a libSVM file"
+"""
+Read a libSVM file
+
+$(DocumentFunction.documentfunction(readlibsvmfile;
+argtext=Dict("file"=>"file name")))
+
+Returns:
+
+- x,y
+"""
 function readlibsvmfile(file::String)
 	d = readdlm(file)
 	(o, p) = size(d)
