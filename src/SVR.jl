@@ -198,8 +198,8 @@ end
 Train based on a libSVM model
 
 $(DocumentFunction.documentfunction(train;
-argtext=Dict("y"=>"",
-            "x"=>""),
+argtext=Dict("y"=>"vector of dependent variables",
+            "x"=>"array of independent variables"),
 keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
             "kernel_type"=>"kernel type [default=`RBF`]",
             "degree"=>"degree of the polynomial kernel [default=`3`]",
@@ -216,7 +216,7 @@ keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
 
 Returns:
 
-- trained result
+- SVM model
 """
 function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
@@ -232,11 +232,11 @@ Predict based on a libSVM model
 
 $(DocumentFunction.documentfunction(predict;
 argtext=Dict("pmodel"=>"the model that prediction is based on",
-            "x"=>"")))
+            "x"=>"array of independent variables")))
 
 Return:
 
-- prediction
+- predicted dependent variables
 """
 function predict(pmodel::svmmodel, x::Array)
 	nx = size(x, 2)
@@ -261,7 +261,7 @@ argtext=Dict("filename"=>"input file name")))
 
 Returns:
 
-- libSVM model
+- SVM model
 """
 function loadmodel(filename::String)
 	param = mapparam()
@@ -313,7 +313,8 @@ argtext=Dict("file"=>"file name")))
 
 Returns:
 
-- x,y
+- array of independent variables
+- vector of dependent variables
 """
 function readlibsvmfile(file::String)
 	d = readdlm(file)
