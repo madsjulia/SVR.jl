@@ -3,3 +3,4 @@
 *.so.2
 *.so
 svm-train
+svrmodels
