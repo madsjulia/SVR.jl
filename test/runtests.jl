@@ -4,7 +4,6 @@ currentdir = pwd()
 cd(dirname(@__FILE__))
 
 @Base.Test.testset "SVR" begin
-
     y_true = vec(readdlm("mg.result"))
 
     x, y = SVR.readlibsvmfile("mg.libsvm")
