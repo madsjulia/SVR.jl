@@ -267,8 +267,8 @@ Returns:
 """
 function loadmodel(filename::String)
 	param = mapparam()
-	x = Array(Float64, 0)
-	y = Array(Float64, 0)
+	x = Array{Float64}(0)
+	y = Array{Float64}(0)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
