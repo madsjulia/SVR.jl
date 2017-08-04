@@ -143,6 +143,8 @@ Developers
 ==========
 
 * [Velimir (monty) Vesselinov](http://www.lanl.gov/orgs/ees/staff/monty) [(publications)](http://scholar.google.com/citations?user=sIFHVvwAAAAJ)
+* [Boian Alexandrov](http://cnls.lanl.gov/External/people/Boian_Alexandrov.php) [(publications)](https://scholar.google.com/citations?user=Pg2XQBsAAAAJ)
+* [Vesselin Grantcharov](https://github.com/Vesalon)
 * [Daniel O'Malley](http://www.lanl.gov/expertise/profiles/view/daniel-o'malley) [(publications)](http://scholar.google.com/citations?user=rPzCVjEAAAAJ)
 * [see also](https://github.com/madsjulia/SVR.jl/graphs/contributors)
 
