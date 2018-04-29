@@ -130,8 +130,7 @@ keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
             "nu"=>"upper bound on the fraction of training errors / lower bound of the fraction of support vectors; acceptable range (0, 1]; applied if NU_SVR model [default=`0.5`]",
             "p"=>"epsilon for EPSILON_SVR [default=`0.1`]",
             "cache_size"=>"size of the kernel cache [default=`100.0`]",
-            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value
-[default=`0.001`]",
+            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`0.001`]",
             "shrinking"=>"apply shrinking heuristic [default=`true`]",
             "probability"=>"train to estimate probabilities [default=`false`]",
             "nr_weight"=>"[default=`0`]",
@@ -222,7 +221,7 @@ Returns:
 """
 function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
-	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
+	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
