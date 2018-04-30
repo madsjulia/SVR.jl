@@ -255,6 +255,23 @@ function predict(pmodel::svmmodel, x::Array)
 end
 
 """
+Predict based on a libSVM model
+
+$(DocumentFunction.documentfunction(apredict;
+argtext=Dict("y"=>"vector of dependent variables",
+            "x"=>"array of independent variables")))
+
+Return:
+
+- predicted dependent variables
+"""
+function apredict(y::Vector, x::Array; kw...)
+	svmmodel = train(y, x; kw...)
+	freemodel(svmmodel)
+	p = predict(svmmodel, x)
+end
+
+"""
 Load a libSVM model
 
 $(DocumentFunction.documentfunction(loadmodel;
