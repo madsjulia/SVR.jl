@@ -350,4 +350,20 @@ function readlibsvmfile(file::String)
 	return x, y
 end
 
+"""
+Compute the coefficient of determination (r2)
+
+$(DocumentFunction.documentfunction(r2;
+argtext=Dict("x"=>"observed data", "y"=>"predicted data")))
+
+Returns:
+
+- coefficient of determination (r2)
+"""
+function r2(x, y)
+	stot = sum((x .- mean(x)).^2)
+	sres = sum((x - y).^2)
+	return(1. - (sres / stot))
+end
+
 end
