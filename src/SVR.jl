@@ -2,6 +2,8 @@ __precompile__()
 
 module SVR
 
+using Libdl
+
 import JLD
 import DocumentFunction
 
@@ -12,13 +14,13 @@ struct svm_node
 	value::Cdouble
 end
 
-struct svm_problem
+mutable struct svm_problem
 	l::Cint
 	y::Ptr{Cdouble}
 	x::Ptr{Ptr{svm_node}}
 end
 
-struct svm_parameter
+mutable struct svm_parameter
 	svm_type::Cint
 	kernel_type::Cint
 	degree::Cint
@@ -36,7 +38,7 @@ struct svm_parameter
 	probability::Cint
 end
 
-struct svm_model
+mutable struct svm_model
 	param::svm_parameter
 	nr_class::Cint
 	l::Cint
@@ -73,31 +75,31 @@ const PRECOMPUTED = Cint(4)
 # const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libsvm.so.2"))
 # const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libdensesvm.so.2"))
 
-# get library
-let libsvm = C_NULL
-	global get_lib
-	function get_lib()
-		if libsvm == C_NULL
-			libpath = joinpath(dirname(@__FILE__), "..", "deps", "libsvm-3.22")
-			libfile = is_windows() ? joinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
-			libsvm = Libdl.dlopen(libfile)
-			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Void, (Ptr{Void},), cfunction(liboutput, Void, (Ptr{UInt8},)))
-		end
-		libsvm
-	end
-end
 
 """
 catch lib output
 
-$(DocumentFunction.documentfunction(liboutput;
-argtext=Dict("str"=>"string")))
+$(DocumentFunction.documentfunction(liboutput; argtext=Dict("str"=>"string")))
 """
 function liboutput(str::Ptr{UInt8})
 	if verbosity
 		print(unsafe_string(str))
 	end
 	nothing
+end
+
+# get library
+let libsvm = C_NULL
+	global get_lib
+	function get_lib()
+		if libsvm == C_NULL
+			libpath = joinpath(dirname(@__FILE__), "..", "deps", "libsvm-3.22")
+			libfile = Sys.iswindows() ? joinpath(libpath, "libsvm$(Sys.WORD_SIZE).dll") : joinpath(libpath, "libsvm.so.2")
+			libsvm = Libdl.dlopen(libfile)
+			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Nothing, (Ptr{Nothing},), @cfunction(liboutput, Nothing, (Ptr{UInt8},)))
+		end
+		libsvm
+	end
 end
 
 # make lib function calls
@@ -183,8 +185,8 @@ argtext=Dict("x"=>"")))
 function mapnodes(x::Array)
 	nfeatures = size(x, 1)
 	ninstances = size(x, 2)
-	nodeptrs = Array{Ptr{svm_node}}(ninstances)
-	nodes = Array{svm_node}(nfeatures + 1, ninstances)
+	nodeptrs = Array{Ptr{svm_node}}(undef, ninstances)
+	nodes = Array{svm_node, 2}(undef, nfeatures + 1, ninstances)
 	for i=1:ninstances
 		for j=1:nfeatures
 			nodes[j, i] = svm_node(Cint(j), Float64(x[j, i]))
@@ -241,7 +243,7 @@ Return:
 """
 function predict(pmodel::svmmodel, x::Array)
 	nx = size(x, 2)
-	y = Array{Float64}(nx)
+	y = Array{Float64}(undef, nx)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
 		(nodes, nodeptrs) = mapnodes(x)
 		for i = 1:nx
@@ -283,8 +285,8 @@ Returns:
 """
 function loadmodel(filename::String)
 	param = mapparam()
-	x = Array{Float64}(0)
-	y = Array{Float64}(0)
+	x = Array{Float64}(undef, 0)
+	y = Array{Float64}(undef, 0)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
@@ -317,7 +319,7 @@ argtext=Dict("pmodel"=>"svm model")))
 """
 function freemodel(pmodel::svmmodel)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
-		ccall(svm_free_model_content(), Void, (Ptr{Void},), pmodel.plibsvmmodel)
+		ccall(svm_free_model_content(), Nothing, (Ptr{Nothing},), pmodel.plibsvmmodel)
 		pmodel.plibsvmmodel = Ptr{SVR.svm_model}(C_NULL)
 	end
 	nothing
@@ -337,7 +339,7 @@ Returns:
 function readlibsvmfile(file::String)
 	d = readdlm(file)
 	(o, p) = size(d)
-	x = Array{Float64}(o, p - 1)
+	x = Array{Float64}(undef, o, p - 1)
 	y = []
 	try
 		y = Float64.(d[:,1])
