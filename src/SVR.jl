@@ -2,7 +2,9 @@ __precompile__()
 
 module SVR
 
+using Base
 using Libdl
+using DelimitedFiles
 
 import JLD
 import DocumentFunction
@@ -347,7 +349,7 @@ function readlibsvmfile(file::String)
 		y = d[:,1]
 	end
 	for i = 2:p
-		x[:,i-1] = map(j->(parse(split(d[j,i], ':')[2])), collect(1:o))
+		x[:,i-1] = map(j->(parse(Float64, split(d[j,i], ':')[2])), collect(1:o))
 	end
 	return x, y
 end
