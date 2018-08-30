@@ -7,6 +7,7 @@ version = "0.3.1"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DocumentFunction = "5593b220-aad2-11e8-0680-d9fc7de3193b"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
