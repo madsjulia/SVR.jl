@@ -284,11 +284,7 @@ function trainSVM(pprob, pparam, modelfile; dense=false)
 end
 
 function getbar()
-  if VERSION < v"0.5"
-    barlen = Base.tty_size()[2]-18
-  else
-    barlen = Base.displaysize()[2]-18
-  end
+  barlen = Base.displaysize()[2]-18
   return barlen
 end
 
