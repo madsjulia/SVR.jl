@@ -1,0 +1,14 @@
+[[DelimitedFiles]]
+deps = ["Mmap"]
+uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[DocumentFunction]]
+path = "/Users/monty/.julia/dev/DocumentFunction"
+uuid = "5593b220-aad2-11e8-0680-d9fc7de3193b"
+version = "0.3.0"
+
+[[Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[Mmap]]
+uuid = "a63ad114-7e13-5084-954f-fe012c677804"

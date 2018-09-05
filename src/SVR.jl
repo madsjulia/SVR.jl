@@ -6,7 +6,6 @@ using Base
 using Libdl
 using DelimitedFiles
 
-import JLD
 import DocumentFunction
 
 verbosity = false
