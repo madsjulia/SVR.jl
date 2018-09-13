@@ -3,7 +3,6 @@ deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[DocumentFunction]]
-path = "/Users/monty/.julia/dev/DocumentFunction"
 uuid = "5593b220-aad2-11e8-0680-d9fc7de3193b"
 version = "0.3.0"
 
