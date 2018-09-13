@@ -2,6 +2,8 @@ SVR
 ================
 
 [![SVR](http://pkg.julialang.org/badges/SVR_0.5.svg)](http://pkg.julialang.org/?pkg=SVR&ver=0.5)
+[![SVR](http://pkg.julialang.org/badges/SVR_0.6.svg)](http://pkg.julialang.org/?pkg=SVR&ver=0.6)
+[![SVR](http://pkg.julialang.org/badges/SVR_1.0.svg)](http://pkg.julialang.org/?pkg=SVR&ver=1.0)
 [![Build Status](https://travis-ci.org/madsjulia/SVR.jl.svg?branch=master)](https://travis-ci.org/madsjulia/SVR.jl)
 [![Coverage Status](https://coveralls.io/repos/madsjulia/SVR.jl/badge.svg?branch=master)](https://coveralls.io/r/madsjulia/SVR.jl?branch=master)
 
