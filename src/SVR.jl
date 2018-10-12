@@ -5,7 +5,6 @@ module SVR
 using Base
 using Libdl
 using DelimitedFiles
-
 import DocumentFunction
 
 verbosity = false
