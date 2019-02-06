@@ -15,7 +15,7 @@ Installation
 ------------
 
 ```julia
-Pkg.add("SVR")
+import SVR; Pkg.add("SVR")
 ```
 
 Example
@@ -40,118 +40,16 @@ SVR.savemodel(pmodel, "mg.model")
 SVR.freemodel(pmodel)
 ```
 
-MADS
-====
+Projects using SVR
+-----------------
 
-[MADS](http://madsjulia.github.io/Mads.jl) (Model Analysis & Decision Support) is an integrated open-source high-performance computational (HPC) framework in [Julia](http://julialang.org).
-MADS can execute a wide range of data- and model-based analyses:
-
-* Sensitivity Analysis
-* Parameter Estimation
-* Model Inversion and Calibration
-* Uncertainty Quantification
-* Model Selection and Model Averaging
-* Model Reduction and Surrogate Modeling
-* Machine Learning and Blind Source Separation
-* Decision Analysis and Support
-
-MADS has been tested to perform HPC simulations on a wide-range multi-processor clusters and parallel environments (Moab, Slurm, etc.).
-MADS utilizes adaptive rules and techniques which allows the analyses to be performed with a minimum user input.
-The code provides a series of alternative algorithms to execute each type of data- and model-based analyses.
-
-Documentation
-=============
-
-All the available MADS modules and functions are described at [madsjulia.github.io](http://madsjulia.github.io/Mads.jl)
-
-Installation
-============
-
-After starting Julia, execute:
-
-```julia
-Pkg.add("Mads")
-```
-
-Installation of MADS behind a firewall
-------------------------------
-
-Julia uses git for package management. Add in the `.gitconfig` file in your home directory:
-
-```git
-[url "https://"]
-        insteadOf = git://
-```
-
-or execute:
-
-```bash
-git config --global url."https://".insteadOf git://
-```
-
-Set proxies:
-
-```bash
-export ftp_proxy=http://proxyout.<your_site>:8080
-export rsync_proxy=http://proxyout.<your_site>:8080
-export http_proxy=http://proxyout.<your_site>:8080
-export https_proxy=http://proxyout.<your_site>:8080
-export no_proxy=.<your_site>
-```
-
-For example, if you are doing this at LANL, you will need to execute the
-following lines in your bash command-line environment:
-
-```bash
-export ftp_proxy=http://proxyout.lanl.gov:8080
-export rsync_proxy=http://proxyout.lanl.gov:8080
-export http_proxy=http://proxyout.lanl.gov:8080
-export https_proxy=http://proxyout.lanl.gov:8080
-export no_proxy=.lanl.gov
-```
-
-MADS examples
-=============
-
-In Julia REPL, do the following commands:
-
-```julia
-import Mads
-```
-
-To explore getting-started instructions, execute:
-
-```julia
-Mads.help()
-```
-
-There are various examples located in the `examples` directory of the `Mads` repository.
-
-For example, execute
-
-```julia
-include(Mads.madsdir * "/../examples/contamination/contamination.jl")
-```
-
-to perform various example analyses related to groundwater contaminant transport, or execute
-
-```julia
-include(Mads.madsdir * "/../examples/bigdt/bigdt.jl")
-```
-
-to perform Bayesian Information Gap Decision Theory (BIG-DT) analysis.
-
-Developers
-==========
-
-* [Velimir (monty) Vesselinov](http://www.lanl.gov/orgs/ees/staff/monty) [(publications)](http://scholar.google.com/citations?user=sIFHVvwAAAAJ)
-* [Boian Alexandrov](http://cnls.lanl.gov/External/people/Boian_Alexandrov.php) [(publications)](https://scholar.google.com/citations?user=Pg2XQBsAAAAJ)
-* [Vesselin Grantcharov](https://github.com/Vesalon)
-* [Daniel O'Malley](http://www.lanl.gov/expertise/profiles/view/daniel-o'malley) [(publications)](http://scholar.google.com/citations?user=rPzCVjEAAAAJ)
-* [see also](https://github.com/madsjulia/SVR.jl/graphs/contributors)
+* [MADS](https://github.com/madsjulia)
+* [TensorDecompositions](https://github.com/TensorDecompositions)
 
 Publications, Presentations, Projects
-=====================================
+--------------------------
 
-* [mads.lanl.gov/](http://mads.lanl.gov/)
-* [ees.lanl.gov/monty](http://ees.lanl.gov/monty)
+* [mads.gitlab.io](http://mads.gitlab.io)
+* [TensorDecompositions](https://tensordecompositions.github.io)
+* [monty.gitlab.io](http://monty.gitlab.io)
+* [ees.lanl.gov/monty](https://www.lanl.gov/orgs/ees/staff/monty)
