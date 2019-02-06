@@ -24,20 +24,15 @@ Example
 ```julia
 import SVR
 
-# read a libSVM input file
-x, y = SVR.readlibsvmfile("mg.libsvm")
+x, y = SVR.readlibsvmfile(joinpath(dirname(pathof(SVR)), "..", "test", "mg.libsvm")) # read a libSVM input file
 
-# train a libSVM model
-pmodel = SVR.train(y, x');
+pmodel = SVR.train(y, permutedims(x)) # train a libSVM model
 
-# predict based on the libSVM model
-y_pr = SVR.predict(pmodel, x');
+y_pr = SVR.predict(pmodel, permutedims(x)); # predict based on the libSVM model
 
-# save the libSVM model
-SVR.savemodel(pmodel, "mg.model")
+SVR.savemodel(pmodel, "mg.model") # save the libSVM model
 
-# free the memory allocation of the libSVM model
-SVR.freemodel(pmodel)
+SVR.freemodel(pmodel) # free the memory allocation of the libSVM model
 ```
 
 Projects using SVR

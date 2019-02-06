@@ -182,7 +182,7 @@ end
 $(DocumentFunction.documentfunction(mapnodes;
 argtext=Dict("x"=>"")))
 """
-function mapnodes(x::Array)
+function mapnodes(x::AbstractArray)
 	nfeatures = size(x, 1)
 	ninstances = size(x, 2)
 	nodeptrs = Array{Ptr{svm_node}}(undef, ninstances)
@@ -221,7 +221,7 @@ Returns:
 
 - SVM model
 """
-function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+function train(y::AbstractVector, x::AbstractArray; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
@@ -229,6 +229,7 @@ function train(y::Vector, x::Array; svm_type::Int32=EPSILON_SVR, kernel_type::In
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
+export train
 
 """
 Predict based on a libSVM model
@@ -241,7 +242,7 @@ Return:
 
 - predicted dependent variables
 """
-function predict(pmodel::svmmodel, x::Array)
+function predict(pmodel::svmmodel, x::AbstractArray)
 	nx = size(x, 2)
 	y = Array{Float64}(undef, nx)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
@@ -255,6 +256,7 @@ function predict(pmodel::svmmodel, x::Array)
 	end
 	return y
 end
+export predict
 
 """
 Predict based on a libSVM model
@@ -267,7 +269,7 @@ Return:
 
 - predicted dependent variables
 """
-function apredict(y::Vector, x::Array; kw...)
+function apredict(y::AbstractVector, x::AbstractArray; kw...)
 	svmmodel = train(y, x; kw...)
 	freemodel(svmmodel)
 	p = predict(svmmodel, x)
@@ -292,6 +294,7 @@ function loadmodel(filename::String)
 	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
+export loadmodel
 
 """
 Save a libSVM model
@@ -324,6 +327,7 @@ function freemodel(pmodel::svmmodel)
 	end
 	nothing
 end
+export savemodel
 
 """
 Read a libSVM file
