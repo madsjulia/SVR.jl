@@ -8,7 +8,8 @@ DocumentFunction = "e1f3b4f0-2dc4-57d3-83f7-d4b7faf3b05b"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [compat]
-julia = "≥ 1.1.0"
+DocumentFunction = "^0"
+julia = "^1"
 
 [extras]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
