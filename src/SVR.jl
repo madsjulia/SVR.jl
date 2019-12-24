@@ -344,9 +344,9 @@ function readlibsvmfile(file::String)
 	d = readdlm(file)
 	(o, p) = size(d)
 	x = Array{Float64}(undef, o, p - 1)
-	y = []
+	y = Vector{Float64}(undef, o)
 	try
-		y = Float64.(d[:,1])
+		y = convert.(Float64, d[:,1])
 	catch
 		y = d[:,1]
 	end
