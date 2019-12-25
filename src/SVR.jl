@@ -258,6 +258,13 @@ function predict(pmodel::svmmodel, x::AbstractArray)
 end
 export predict
 
+function fit(y::AbstractVector, x::AbstractArray; kw...)
+	pmodel = SVR.train(y, x; kw...)
+	y_pr = SVR.predict(pmodel, x)
+	SVR.freemodel(pmodel)
+	return y_pr
+end
+
 """
 Predict based on a libSVM model
 

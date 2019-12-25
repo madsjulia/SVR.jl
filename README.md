@@ -15,8 +15,40 @@ Installation
 import Pkg; Pkg.add("SVR")
 ```
 
-Example
+Examples
 -------
+
+Matching sine function:
+
+```julia
+import SVR
+import Mads
+
+X = sort(rand(40) * 5)
+y = sin.(X)
+```
+
+Predict `y` based on `X` using `RBF`
+
+```
+Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.RBF)], "figures/rbf.png"; title="RBF", names=["Truth", "Prediction"])
+```
+
+
+Predict `y` based on `X` using `LINEAR`
+
+```
+Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.LINEAR)], "figures/linear.png"; title="Linear", names=["Truth", "Prediction"])
+
+```
+
+Predict `y` based on `X` using `POLY`
+
+```
+Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.POLY, coef0=1.)], "figures/poly.png"; title="Polynomial", names=["Truth", "Prediction"])
+```
+
+libSVM test example:
 
 ```julia
 import SVR
