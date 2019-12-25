@@ -6,6 +6,7 @@ using Base
 using Libdl
 using DelimitedFiles
 import DocumentFunction
+import Statistics
 
 verbosity = false
 
@@ -221,13 +222,19 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector, x::AbstractArray; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
+	if maximum(y) > 1 || minimum(y) < -1
+		error("Dependent variables should be normalized!")
+	end
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	return svmmodel(plibsvmmodel, param, prob, nodes)
+end
+function train(y::AbstractVector, x::AbstractArray; kw...)
+	SVR.train(Float64.(y), Float64.(x); kw...)
 end
 export train
 
@@ -242,7 +249,7 @@ Return:
 
 - predicted dependent variables
 """
-function predict(pmodel::svmmodel, x::AbstractArray)
+function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 	nx = size(x, 2)
 	y = Array{Float64}(undef, nx)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
@@ -258,11 +265,35 @@ function predict(pmodel::svmmodel, x::AbstractArray)
 end
 export predict
 
-function fit(y::AbstractVector, x::AbstractArray; kw...)
-	pmodel = SVR.train(y, x; kw...)
+function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
+	yn = minimum(y)
+	yx = maximum(y)
+	a = (y .- yn) ./ (yx - yn)
+	pmodel = SVR.train(a, x; kw...)
 	y_pr = SVR.predict(pmodel, x)
 	SVR.freemodel(pmodel)
-	return y_pr
+	if any(isnan.(y_pr))
+		@warn("SVR output contains NaN's")
+	end
+	return (y_pr * (yx - yn)) .+ yn
+end
+function fit(y::AbstractVector, x::AbstractArray; kw...)
+	SVR.fit(Float64.(y), Float64.(x); kw...)
+end
+
+function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
+	yn = minimum(y)
+	yx = maximum(y)
+	a = (y .- yn) ./ (yx - yn)
+	ir = rand(length(y)) .> level
+	@info("Predicting $(length(y)-sum(ir)) out of $(length(y))")
+	pmodel = SVR.train(a[ir], x[:,ir]; kw...)
+	y_pr = SVR.predict(pmodel, x)
+	SVR.freemodel(pmodel)
+	if any(isnan.(y_pr))
+		@warn("SVR output contains NaN's")
+	end
+	return (y_pr * (yx - yn)) .+ yn
 end
 
 """
@@ -276,10 +307,14 @@ Return:
 
 - predicted dependent variables
 """
-function apredict(y::AbstractVector, x::AbstractArray; kw...)
+function apredict(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 	svmmodel = train(y, x; kw...)
-	freemodel(svmmodel)
 	p = predict(svmmodel, x)
+	freemodel(svmmodel)
+	if any(isnan.(p))
+		@warn("SVR output contains NaN's")
+	end
+	return p
 end
 
 """
@@ -373,9 +408,9 @@ Returns:
 
 - coefficient of determination (r2)
 """
-function r2(x, y)
-	stot = sum((x .- mean(x)).^2)
-	sres = sum((x - y).^2)
+function r2(x::AbstractVector, y::AbstractVector)
+	stot = sum((x .- Statistics.mean(x)) .^ 2)
+	sres = sum((x - y) .^ 2)
 	return(1. - (sres / stot))
 end
 
