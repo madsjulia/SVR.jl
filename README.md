@@ -35,7 +35,7 @@ Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.RBF)], "figures/rb
 ```
 
 <div style="text-align: left">
-    <img src="test/figures/rbf.png" alt="" width=100% />
+    <img src="test/figures/rbf.png" alt="" width=50% />
 </div>
 
 Predict `y` based on `X` using `LINEAR`
@@ -45,11 +45,19 @@ Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.LINEAR)], "figures
 
 ```
 
+<div style="text-align: left">
+    <img src="test/figures/linear.png" alt="" width=50% />
+</div>
+
 Predict `y` based on `X` using `POLY`
 
 ```
 Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.POLY, coef0=1.)], "figures/poly.png"; title="Polynomial", names=["Truth", "Prediction"])
 ```
+
+<div style="text-align: left">
+    <img src="test/figures/poly.png" alt="" width=50% />
+</div>
 
 libSVM test example:
 
