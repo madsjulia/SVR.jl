@@ -12,7 +12,7 @@ Installation
 ------------
 
 ```julia
-import SVR; Pkg.add("SVR")
+import Pkg; Pkg.add("SVR")
 ```
 
 Example
