@@ -34,6 +34,9 @@ Predict `y` based on `X` using `RBF`
 Mads.plotseries([y SVR.fit(y, permutedims(X); kernel_type=SVR.RBF)], "figures/rbf.png"; title="RBF", names=["Truth", "Prediction"])
 ```
 
+<div style="text-align: left">
+    <img src="test/figures/rbf.png" alt="" width=100% />
+</div>
 
 Predict `y` based on `X` using `LINEAR`
 
