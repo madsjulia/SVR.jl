@@ -1,4 +1,4 @@
-Insallation
+Installation
 =======================================
 
 clone repo
@@ -46,7 +46,7 @@ Output Data
 =======================================
 output of runSVM* is put into directory specified by outfolder parameter
 if you have old SVM output data in this folder, it is wiped
-it saves 
+it saves
   -info
   -predicted.csv = predicted data in csv format
   -svm_output = predict data in LIBSVM format
