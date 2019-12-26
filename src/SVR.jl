@@ -285,8 +285,10 @@ function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
 	yn = minimum(y)
 	yx = maximum(y)
 	a = (y .- yn) ./ (yx - yn)
-	ir = rand(length(y)) .> level
-	@info("Predicting $(length(y)-sum(ir)) out of $(length(y))")
+	ic = convert(Int64, ceil(length(y) * (1. - level)))
+	rv = rand(length(y))
+	ir = sortperm(rv)[1:ic]
+	@info("Predicting $(length(y)-ic) out of $(length(y))")
 	pmodel = SVR.train(a[ir], x[:,ir]; kw...)
 	y_pr = SVR.predict(pmodel, x)
 	SVR.freemodel(pmodel)
