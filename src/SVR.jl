@@ -2,9 +2,9 @@ __precompile__()
 
 module SVR
 
-using Base
-using Libdl
-using DelimitedFiles
+import Base
+import Libdl
+import DelimitedFiles
 import DocumentFunction
 import Statistics
 
@@ -225,7 +225,7 @@ Returns:
 function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	if maximum(y) > 1 || minimum(y) < -1
-		error("Dependent variables should be normalized!")
+		@warn("Dependent variables should be normalized!")
 	end
 	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
@@ -385,7 +385,7 @@ Returns:
 - vector of dependent variables
 """
 function readlibsvmfile(file::String)
-	d = readdlm(file)
+	d = DelimitedFiles.readdlm(file)
 	(o, p) = size(d)
 	x = Array{Float64}(undef, o, p - 1)
 	y = Vector{Float64}(undef, o)
