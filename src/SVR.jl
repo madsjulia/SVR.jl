@@ -281,7 +281,7 @@ function fit(y::AbstractVector, x::AbstractArray; kw...)
 	SVR.fit(Float64.(y), Float64.(x); kw...)
 end
 
-function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; kw...)
 	yn = minimum(y)
 	yx = maximum(y)
 	a = (y .- yn) ./ (yx - yn)
@@ -296,6 +296,9 @@ function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
 		@warn("SVR output contains NaN's")
 	end
 	return (y_pr * (yx - yn)) .+ yn
+end
+function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
+	SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
 end
 
 """
