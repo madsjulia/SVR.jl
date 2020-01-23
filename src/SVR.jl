@@ -277,8 +277,8 @@ function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 	end
 	return (y_pr * (yx - yn)) .+ yn
 end
-function fit(y::AbstractVector, x::AbstractArray; kw...)
-	SVR.fit(Float64.(y), Float64.(x); kw...)
+function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
+	T.(SVR.fit(Float64.(y), Float64.(x); kw...))
 end
 
 function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; kw...)
@@ -288,17 +288,22 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 	ic = convert(Int64, ceil(length(y) * (1. - level)))
 	rv = rand(length(y))
 	ir = sortperm(rv)[1:ic]
-	@info("Predicting $(length(y)-ic) out of $(length(y))")
+	if length(y) > ic
+		@info("Training on $(ic) out of $(length(y))")
+	end
 	pmodel = SVR.train(a[ir], x[:,ir]; kw...)
 	y_pr = SVR.predict(pmodel, x)
 	SVR.freemodel(pmodel)
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
-	return (y_pr * (yx - yn)) .+ yn
+	pm = trues(length(y))
+	pm[ir] .= false
+	return (y_pr * (yx - yn)) .+ yn, pm
 end
-function fit_test(y::AbstractVector, x::AbstractArray, level::Number=0.5; kw...)
-	SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; kw...) where {T}
+	y_pr, pm = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
+	return T.(y_pr), pm
 end
 
 """
