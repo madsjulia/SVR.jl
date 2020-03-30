@@ -236,6 +236,15 @@ end
 function train(y::AbstractVector, x::AbstractArray; kw...)
 	SVR.train(Float64.(y), Float64.(x); kw...)
 end
+function train(y::AbstractArray, x::AbstractArray; kw...)
+	@assert size(y, 1) == size(x, 2)
+	nm = size(y, 2)
+	m = Vector{svmmodel}(undef, nm)
+	for i = 1:nm
+		m[i] = SVR.train(vec(y[:,i]), x; kw...)
+	end
+	return m
+end
 export train
 
 """
@@ -280,6 +289,14 @@ end
 function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
 	T.(SVR.fit(Float64.(y), Float64.(x); kw...))
 end
+function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
+	@assert size(y, 1) == size(x, 2)
+	yp = similar(y)
+	for i = 1:size(y, 2)
+		yp[:,i] = SVR.fit(vec(y[:,i]), x; kw...)
+	end
+	return yp
+end
 
 function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; kw...)
 	yn = minimum(y)
@@ -305,6 +322,15 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; 
 	y_pr, pm = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
 	return T.(y_pr), pm
 end
+function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
+	@assert size(y, 1) == size(x, 2)
+	pm = Array{Bool}(undef, size(y))
+	yp = similar(y)
+	for i = 1:size(y, 2)
+		yp[:,i], pm[:,i] = SVR.fit_test(vec(y[:,i]), x; kw...)
+	end
+	return yp, pm
+end
 
 """
 Predict based on a libSVM model
@@ -325,6 +351,17 @@ function apredict(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 		@warn("SVR output contains NaN's")
 	end
 	return p
+end
+function apredict(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
+	T.(SVR.apredict(Float64.(y), Float64.(x); kw...))
+end
+function apredict(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
+	@assert size(y, 1) == size(x, 2)
+	yp = similar(y)
+	for i = 1:size(y, 2)
+		yp[:,i] = SVR.apredict(vec(y[:,i]), x; kw...)
+	end
+	return yp
 end
 
 """
