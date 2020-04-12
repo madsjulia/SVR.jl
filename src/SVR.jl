@@ -298,19 +298,36 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 	return yp
 end
 
-function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, quiet::Bool=false, kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, keepcases=nothing, quiet::Bool=false, kw...)
+	@assert length(y) == size(x, 2)
 	yn = minimum(y)
 	yx = maximum(y)
 	a = (y .- yn) ./ (yx - yn)
 	if pm == nothing
-		ic = convert(Int64, ceil(length(y) * (1. - level)))
-		if ic == 0
+		ic = convert(Int64, ceil(size(y, 1) * (1. - level)))
+		ns = length(y)
+		pm = trues(ns)
+		if keepcases != nothing
+			@assert length(keepcases) == size(x, 2)
+			pm[keepcases] .= false
+			kn = sum(keepcases)
+			if ic > kn && ns > kn
+				ic -= kn
+				ns -= kn
+			else
+				@warn("Number of cases to keep is too large ($(kn)!")
+			end
 		end
-		rv = rand(length(y))
-		ir = sortperm(rv)[1:ic]
-		pm = trues(length(y))
-		pm[ir] .= false
+		ir = sortperm(rand(ns))[1:ic]
+		if keepcases != nothing
+			m = trues(ns)
+			m[ir] .= false
+			pm[.!keepcases] .= m
+		else
+			pm[ir] .= false
+		end
 	else
+		@assert length(pm) == size(x, 2)
 		ic = sum(.!pm)
 	end
 	if !quiet && length(y) > ic
@@ -328,13 +345,30 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; 
 	y_pr, pm = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
 	return T.(y_pr), pm
 end
-function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; kw...) where {T}
+function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; keepcases=nothing, kw...) where {T}
 	@assert size(y, 1) == size(x, 2)
-	ic = convert(Int64, ceil(size(y, 1) * (1. - level)))
-	rv = rand(size(y, 1))
-	ir = sortperm(rv)[1:ic]
-	pm = trues(size(y, 1))
-	pm[ir] .= false
+	ns = size(y, 1)
+	ic = convert(Int64, ceil(ns * (1. - level)))
+	pm = trues(ns)
+	if keepcases != nothing
+		@assert length(keepcases) == size(x, 2)
+		pm[keepcases] .= false
+		kn = sum(keepcases)
+		if ic > kn && ns > kn
+			ic -= kn
+			ns -= kn
+		else
+			@warn("Number of cases to keep is too large ($(kn)!")
+		end
+	end
+	ir = sortperm(rand(ns))[1:ic]
+	if keepcases != nothing
+		m = trues(ns)
+		m[ir] .= false
+		pm[.!keepcases] .= m
+	else
+		pm[ir] .= false
+	end
 	yp = similar(y)
 	for i = 1:size(y, 2)
 		yp[:,i], _ = SVR.fit_test(vec(y[:,i]), x, level; pm=pm, kw...)
