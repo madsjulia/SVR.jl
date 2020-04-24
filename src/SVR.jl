@@ -28,13 +28,13 @@ mutable struct svm_parameter
 	gamma::Cdouble
 	coef0::Cdouble
 	cache_size::Cdouble
-	eps::Cdouble
+	tolerance::Cdouble
 	C::Cdouble
 	nr_weight::Cint
 	weight_label::Ptr{Cint}
 	weight::Ptr{Cdouble}
 	nu::Cdouble
-	p::Cdouble
+	epsilon::Cdouble
 	shrinking::Cint
 	probability::Cint
 end
@@ -131,9 +131,9 @@ keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
             "coef0"=>"independent term in kernel function; important only in POLY and  SIGMOND kernel types [default=`0.0`]",
             "C"=>"cost; penalty parameter of the error term [default=`1.0`]",
             "nu"=>"upper bound on the fraction of training errors / lower bound of the fraction of support vectors; acceptable range (0, 1]; applied if NU_SVR model [default=`0.5`]",
-            "p"=>"epsilon for EPSILON_SVR [default=`0.1`]",
+            "epsilon"=>"epsilon for EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`1e-9`]",
             "cache_size"=>"size of the kernel cache [default=`100.0`]",
-            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`0.001`]",
+            "tolerance"=>"tolerance; stopping criteria[default=`0.001`]",
             "shrinking"=>"apply shrinking heuristic [default=`true`]",
             "probability"=>"train to estimate probabilities [default=`false`]",
             "nr_weight"=>"[default=`0`]",
@@ -148,32 +148,33 @@ function mapparam(;
 	svm_type::Cint=EPSILON_SVR,
 	kernel_type::Cint=RBF,
 	degree::Integer=3,
-	gamma::Float64=1.0,
-	coef0::Float64=0.0,
-	C::Float64=1.0,
-	nu::Float64=0.5,
-	p::Float64=0.1, # epsilon for EPSILON_SVR
+	gamma::Cdouble=0.1,
+	coef0::Cdouble=0.0,
+	C::Cdouble=1.0,
+	nu::Cdouble=0.5,
+	epsilon::Cdouble=1e-9, # epsilon for EPSILON_SVR
 	cache_size::Cdouble=100.0,
-	eps::Cdouble=0.001, # solution tolerance
+	tolerance::Cdouble=0.001, # solution tolerance; stopping criteria
 	shrinking::Bool=true,
 	probability::Bool=false,
 	nr_weight::Integer = 0,
 	weight_label = Ptr{Cint}(0x0000000000000000),
 	weight = Ptr{Cdouble}(0x0000000000000000))
 
-	param = svm_parameter(Cint(svm_type),
+	param = svm_parameter(
+	    Cint(svm_type),
 		Cint(kernel_type),
 		Cint(degree),
 		Cdouble(gamma),
 		Cdouble(coef0),
 		Cdouble(cache_size),
-		Cdouble(eps),
+		Cdouble(tolerance),
 		Cdouble(C),
 		Cint(nr_weight),
 		weight_label,
 		weight,
 		Cdouble(nu),
-		Cdouble(p),
+		Cdouble(epsilon),
 		Cint(shrinking),
 		Cint(probability))
 	return param
@@ -211,7 +212,7 @@ keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
             "coef0"=>"independent term in kernel function; important only in POLY and  SIGMOND kernel types [default=`0.0`]",
             "C"=>"cost; penalty parameter of the error term [default=`1.0`]",
             "nu"=>"upper bound on the fraction of training errors / lower bound of the fraction of support vectors; acceptable range (0, 1]; applied if NU_SVR model [default=`0.5`]",
-            "eps"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`0.1`]",
+            "epsilon"=>"epsilon in the EPSILON_SVR model; defines an epsilon-tube within which no penalty is associated in the training loss function with points predicted within a distance epsilon from the actual value [default=`1e-9`]",
             "cache_size"=>"size of the kernel cache [default=`100.0`]",
             "tol"=>"tolerance of termination criterion [default=`0.001`]",
             "shrinking"=>"apply shrinking heuristic [default=`true`]",
@@ -222,12 +223,12 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, eps::Float64=0.1, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.5, epsilon::Float64=1e-9, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	if maximum(y) > 1 || minimum(y) < -1
 		@warn("Dependent variables should be normalized!")
 	end
-	param = mapparam(svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, p=eps, cache_size=cache_size, eps=tol, shrinking=shrinking, probability=probability)
+	param = mapparam(; svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, epsilon=epsilon, cache_size=cache_size, tolerance=tol, shrinking=shrinking, probability=probability)
 	(nodes, nodeptrs) = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
