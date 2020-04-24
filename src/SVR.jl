@@ -275,17 +275,15 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 end
 export predict
 
-function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
-	yn = minimum(y)
-	yx = maximum(y)
-	a = (y .- yn) ./ (yx - yn)
+function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ymin=minimum(y), ymax=maximum(y), kw...)
+	a = (y .- ymin) ./ (ymax - ymin)
 	pmodel = SVR.train(a, x; kw...)
 	y_pr = SVR.predict(pmodel, x)
 	SVR.freemodel(pmodel)
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
-	return (y_pr * (yx - yn)) .+ yn
+	return (y_pr * (ymax - ymin)) .+ ymin
 end
 function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
 	T.(SVR.fit(Float64.(y), Float64.(x); kw...))
@@ -299,11 +297,10 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 	return yp
 end
 
-function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, keepcases=nothing, scale=false, quiet::Bool=false, kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, keepcases=nothing, scale=false, ymin=minimum(y), ymax=maximum(y), quiet::Bool=false, kw...)
 	@assert length(y) == size(x, 2)
-	yn = scale ? 0 : minimum(y)
-	yx = maximum(y)
-	a = (y .- yn) ./ (yx - yn)
+	ymin = scale ? 0 : ymin
+	a = (y .- ymin) ./ (ymax - ymin)
 	if pm == nothing
 		ic = convert(Int64, ceil(size(y, 1) * (1. - level)))
 		ns = length(y)
@@ -340,7 +337,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
-	return (y_pr * (yx - yn)) .+ yn, pm
+	return (y_pr * (ymax - ymin)) .+ ymin, pm
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; kw...) where {T}
 	y_pr, pm = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
