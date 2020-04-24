@@ -300,7 +300,6 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 end
 
 function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, keepcases=nothing, scale=false, quiet::Bool=false, kw...)
-	@show pm
 	@assert length(y) == size(x, 2)
 	yn = scale ? 0 : minimum(y)
 	yx = maximum(y)
@@ -335,12 +334,8 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 	if !quiet && length(y) > ic
 		@info("Training on $(ic) out of $(length(y)) (prediction ratio $level)")
 	end
-	@show a[.!pm]
-	@show x[:,.!pm]
 	pmodel = SVR.train(a[.!pm], x[:,.!pm]; kw...)
-	@show x
 	y_pr = SVR.predict(pmodel, x)
-	@show y_pr
 	SVR.freemodel(pmodel)
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
