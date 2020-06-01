@@ -298,32 +298,14 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 end
 
 function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::Number=0.5; pm=nothing, keepcases=nothing, scale=false, ymin=minimum(y), ymax=maximum(y), quiet::Bool=false, kw...)
+	if keepcases != nothing
+		@assert length(keepcases) == size(x, 2)
+	end
 	@assert length(y) == size(x, 2)
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
 	if pm == nothing
-		ic = convert(Int64, ceil(size(y, 1) * (1. - level)))
-		ns = length(y)
-		pm = trues(ns)
-		if keepcases != nothing
-			@assert length(keepcases) == size(x, 2)
-			pm[keepcases] .= false
-			kn = sum(keepcases)
-			if ic > kn && ns > kn
-				ic -= kn
-				ns -= kn
-			else
-				@warn("Number of cases to keep is too large ($(kn)!")
-			end
-		end
-		ir = sortperm(rand(ns))[1:ic]
-		if keepcases != nothing
-			m = trues(ns)
-			m[ir] .= false
-			pm[.!keepcases] .= m
-		else
-			pm[ir] .= false
-		end
+		pm = get_prediction_mask(length(y), level; keepcases=keepcases)
 	else
 		@assert length(pm) == size(x, 2)
 		ic = sum(.!pm)
@@ -345,35 +327,53 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; 
 end
 function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; pm=nothing, keepcases=nothing, kw...) where {T}
 	@assert size(y, 1) == size(x, 2)
+	if keepcases != nothing
+		@assert length(keepcases) == size(x, 2)
+	end
 	if pm == nothing
-		ns = size(y, 1)
-		ic = convert(Int64, ceil(ns * (1. - level)))
-		pm = trues(ns)
-		if keepcases != nothing
-			@assert length(keepcases) == size(x, 2)
-			pm[keepcases] .= false
-			kn = sum(keepcases)
-			if ic > kn && ns > kn
-				ic -= kn
-				ns -= kn
-			else
-				@warn("Number of cases to keep is too large ($(kn)!")
-			end
-		end
-		ir = sortperm(rand(ns))[1:ic]
-		if keepcases != nothing
-			m = trues(ns)
-			m[ir] .= false
-			pm[.!keepcases] .= m
-		else
-			pm[ir] .= false
-		end
+		pm = get_prediction_mask(size(y, 1), level; keepcases=keepcases)
 	end
 	yp = similar(y)
 	for i = 1:size(y, 2)
 		yp[:,i], _ = SVR.fit_test(vec(y[:,i]), x, level; pm=pm, kw...)
 	end
 	return yp, pm
+end
+
+"""
+Get prediction mask
+
+$(DocumentFunction.documentfunction(get_prediction_mask;
+argtext=Dict("ns"=>"number of samples",
+            "level"=>"prediction level")))
+
+Return:
+
+- prediction mask
+"""
+function get_prediction_mask(ns::Number, level::Number; keepcases=nothing)
+	pm = trues(ns)
+	ic = convert(Int64, ceil(ns * (1. - level)))
+	if keepcases != nothing
+		@assert length(keepcases) == length(pm)
+		pm[keepcases] .= false
+		kn = sum(keepcases)
+		if ic > kn && ns > kn
+			ic -= kn
+			ns -= kn
+		else
+			@warn("Number of cases to keep is too large ($(kn)!")
+		end
+	end
+	ir = sortperm(rand(ns))[1:ic]
+	if keepcases != nothing
+		m = trues(ns)
+		m[ir] .= false
+		pm[.!keepcases] .= m
+	else
+		pm[ir] .= false
+	end
+	return pm
 end
 
 """
