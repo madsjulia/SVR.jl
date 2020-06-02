@@ -308,6 +308,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 		pm = get_prediction_mask(length(y), level; keepcases=keepcases)
 	else
 		@assert length(pm) == size(x, 2)
+		@assert typeof(pm[1]) <: Bool
 		ic = sum(.!pm)
 	end
 	if !quiet && length(y) > ic
