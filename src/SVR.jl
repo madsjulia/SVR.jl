@@ -357,17 +357,17 @@ function get_prediction_mask(ns::Number, level::Number; keepcases=nothing)
 	ic = convert(Int64, ceil(ns * (1. - level)))
 	if keepcases != nothing
 		@assert length(keepcases) == length(pm)
-		pm[keepcases] .= false
 		kn = sum(keepcases)
 		if ic > kn && ns > kn
+			pm[keepcases] .= false
 			ic -= kn
 			ns -= kn
 		else
-			@warn("Number of cases to keep is too large ($(kn))!")
+			@warn("Number of cases to keep is larger ($(kn)) than allowed samples to keep ($(ic))!")
 		end
 	end
 	ir = sortperm(rand(ns))[1:ic]
-	if keepcases != nothing
+	if keepcases != nothing && ic > kn
 		m = trues(ns)
 		m[ir] .= false
 		pm[.!keepcases] .= m
