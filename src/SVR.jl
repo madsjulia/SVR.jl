@@ -363,7 +363,7 @@ function get_prediction_mask(ns::Number, level::Number; keepcases=nothing)
 			ic -= kn
 			ns -= kn
 		else
-			@warn("Number of cases to keep is larger ($(kn)) than allowed samples to keep ($(ic))!")
+			kn > 0 && @warn("Number of cases to keep is larger ($(kn)) than allowed samples to keep ($(ic))!")
 		end
 	end
 	ir = sortperm(rand(ns))[1:ic]
