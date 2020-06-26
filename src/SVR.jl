@@ -501,9 +501,16 @@ Returns:
 - coefficient of determination (r2)
 """
 function r2(x::AbstractVector, y::AbstractVector)
-	stot = sum((x .- Statistics.mean(x)) .^ 2)
-	sres = sum((x - y) .^ 2)
-	return(1. - (sres / stot))
+	ix = .!isnan.(x)
+	iy = .!isnan.(y)
+	ii = ix .& iy
+	mx = x[ii] .- Statistics.mean(x[ii])
+	my = y[ii] .- Statistics.mean(y[ii])
+	r2 = (sum(mx .* my) / sqrt(sum((mx .^ 2) * sum(my .^ 2))))^2
+	# sres = sum((x[ii] .- y[ii]) .^ 2)
+	# stot = sum((y[ii] .- Statistics.mean(y[ii])) .^ 2)
+	# r2 = 1. - (sres / stot)
+	return r2
 end
 
 end
