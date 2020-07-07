@@ -1,6 +1,6 @@
 name = "SVR"
 uuid = "22bb73d7-edb2-5785-ba1e-7d60d6824784"
-version = "0.7.12"
+version = "0.7.13"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
