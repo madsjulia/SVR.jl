@@ -76,7 +76,6 @@ const PRECOMPUTED = Cint(4)
 # const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libsvm.so.2"))
 # const svmlib = abspath(joinpath(Pkg.dir("SVR"), "deps", "libdensesvm.so.2"))
 
-
 """
 catch lib output
 
