@@ -307,9 +307,9 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 		pm = get_prediction_mask(length(y), level; keepcases=keepcases)
 	else
 		@assert length(pm) == size(x, 2)
-		@assert typeof(pm[1]) <: Bool
-		ic = sum(.!pm)
+		@assert eltype(pm) <: Bool
 	end
+	ic = sum(.!pm)
 	if !quiet && length(y) > ic
 		@info("Training on $(ic) out of $(length(y)) (prediction ratio $level)")
 	end
@@ -319,11 +319,12 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
-	return (y_pr * (ymax - ymin)) .+ ymin, pm
+	r2 = SVR.r2(y_pr[pm], a[pm])
+	return (y_pr * (ymax - ymin)) .+ ymin, pm, r2
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; kw...) where {T}
-	y_pr, pm = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
-	return T.(y_pr), pm
+	y_pr, pm, r2 = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
+	return T.(y_pr), pm, r2
 end
 function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; pm=nothing, keepcases=nothing, kw...) where {T}
 	@assert size(y, 1) == size(x, 2)
@@ -335,9 +336,9 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; p
 	end
 	yp = similar(y)
 	for i = 1:size(y, 2)
-		yp[:,i], _ = SVR.fit_test(vec(y[:,i]), x, level; pm=pm, kw...)
+		yp[:,i], _, r2 = SVR.fit_test(vec(y[:,i]), x, level; pm=pm, kw...)
 	end
-	return yp, pm
+	return yp, pm, r2
 end
 
 """
