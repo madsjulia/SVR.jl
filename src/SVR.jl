@@ -342,6 +342,7 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; p
 	return yp, pm, r2
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr=:gamma, kw...) where {T}
+	@assert length(vattr) > 0
 	r2a = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
@@ -352,6 +353,8 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 	return r2, vattr[i]
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr1=:gamma, attr2=:epsilon, kw...) where {T}
+	@assert length(vattr1) > 0
+	@assert length(vattr2) > 0
 	r2a = Matrix{T}(undef, length(vattr1), length(vattr2))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
@@ -364,9 +367,12 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	return r2, vattr1[i.I[1]], vattr2[i.I[2]]
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr1=:gamma, attr2=:epsilon, attr3=:C, kw...) where {T}
+	@assert length(vattr1) > 0
+	@assert length(vattr2) > 0
+	@assert length(vattr3) > 0
 	r2a = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
 	for (i, a1) in enumerate(vattr1)
-		for (j, a2) in enumerate(vattr1)
+		for (j, a2) in enumerate(vattr2)
 			for (k, a3) in enumerate(vattr3)
 				kk = Dict(attr1=>a1, attr1=>a2, attr3=>a3)
 				y_pr, pm, r2a[i, j, k] = SVR.fit_test(y, x, level; kw..., kk...)
