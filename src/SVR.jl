@@ -319,8 +319,9 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}, level::
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
-	r2 = SVR.r2(y_pr[pm], a[pm])
-	return (y_pr * (ymax - ymin)) .+ ymin, pm, r2
+	y_pr = y_pr * (ymax - ymin) .+ ymin
+	r2 = SVR.r2(y_pr[pm], y[pm])
+	return y_pr, pm, r2
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, level::Number=0.5; kw...) where {T}
 	y_pr, pm, r2 = SVR.fit_test(Float64.(y), Float64.(x), level; kw...)
@@ -339,6 +340,42 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}, level::Number=0.5; p
 		yp[:,i], _, r2 = SVR.fit_test(vec(y[:,i]), x, level; pm=pm, kw...)
 	end
 	return yp, pm, r2
+end
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr=:gamma, kw...) where {T}
+	r2a = Vector{T}(undef, length(vattr))
+	for (i, g) in enumerate(vattr)
+		k = Dict(attr=>g)
+		y_pr, pm, r2a[i] = SVR.fit_test(y, x, level; kw..., k...)
+		@info("$attr=>$g: $(r2a[i])")
+	end
+	r2, i = findmax(r2a)
+	return r2, vattr[i]
+end
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr1=:gamma, attr2=:epsilon, kw...) where {T}
+	r2a = Matrix{T}(undef, length(vattr1), length(vattr2))
+	for (i, a1) in enumerate(vattr1)
+		for (j, a2) in enumerate(vattr2)
+			k = Dict(attr1=>a1, attr1=>a2)
+			y_pr, pm, r2a[i, j] = SVR.fit_test(y, x, level; kw..., k...)
+			@info("$attr1=>$a1 $attr2=>$a2: $(r2a[i,j])")
+		end
+	end
+	r2, i = findmax(r2a)
+	return r2, vattr1[i.I[1]], vattr2[i.I[2]]
+end
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}, level::Number=0.5; attr1=:gamma, attr2=:epsilon, attr3=:C, kw...) where {T}
+	r2a = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
+	for (i, a1) in enumerate(vattr1)
+		for (j, a2) in enumerate(vattr1)
+			for (k, a3) in enumerate(vattr3)
+				kk = Dict(attr1=>a1, attr1=>a2, attr3=>a3)
+				y_pr, pm, r2a[i, j, k] = SVR.fit_test(y, x, level; kw..., kk...)
+				@info("$attr1=>$a1 $attr2=>$a2 $attr3=>$a3: $(r2a[i,j,k])")
+			end
+		end
+	end
+	r2, i = findmax(r2a)
+	return r2, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]]
 end
 
 """
