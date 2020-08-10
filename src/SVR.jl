@@ -222,7 +222,7 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/size(x, 1), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(X), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	if maximum(y) > 1 || minimum(y) < -1
 		@warn("Dependent variables should be normalized!")
@@ -296,32 +296,42 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 	return yp
 end
 
-function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, pm=nothing, keepcases=nothing, scale::Bool=false, ymin=minimum(y), ymax=maximum(y), quiet::Bool=false, kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, kw...)
 	if keepcases != nothing
 		@assert length(keepcases) == size(x, 2)
 	end
 	@assert length(y) == size(x, 2)
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
-	if pm == nothing
-		pm = get_prediction_mask(length(y), ratio; keepcases=keepcases)
-	else
-		@assert length(pm) == size(x, 2)
-		@assert eltype(pm) <: Bool
-	end
-	ic = sum(.!pm)
-	if !quiet && length(y) > ic
-		@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
-	end
-	pmodel = SVR.train(a[.!pm], x[:,.!pm]; kw...)
-	y_pr = SVR.predict(pmodel, x)
-	SVR.freemodel(pmodel)
-	if any(isnan.(y_pr))
-		@warn("SVR output contains NaN's")
+	m = Vector{Float64}(undef, repeats)
+	for r in 1:repeats
+		if repeats > 1 || pm == nothing
+			pm = get_prediction_mask(length(y), ratio; keepcases=keepcases)
+		else
+			@assert length(pm) == size(x, 2)
+			@assert eltype(pm) <: Bool
+		end
+		ic = sum(.!pm)
+		if !quiet && repeats == 1 && length(y) > ic
+			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
+		end
+		pmodel = SVR.train(a[.!pm], x[:,.!pm]; kw...)
+		y_pr = SVR.predict(pmodel, x)
+		SVR.freemodel(pmodel)
+		if any(isnan.(y_pr))
+			@warn("SVR output contains NaN's")
+		end
+		if rmse
+			m[r] = total ? SVR.rmse(y_pr, a) : SVR.rmse(y_pr[pm], a[pm])
+		else
+			m[r] = total ? SVR.r2(y_pr, a) : SVR.r2(y_pr[pm], a[pm])
+		end
+		if !veryquiet && repeats > 1
+			println("Repeat $r: $(m[r])")
+		end
 	end
 	y_pr = y_pr * (ymax - ymin) .+ ymin
-	rmse = SVR.rmse(y_pr[pm], y[pm])
-	return y_pr, pm, rmse
+	return y_pr, pm, Statistics.mean(m)
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T}
 	y_pr, pm, rmse = SVR.fit_test(Float64.(y), Float64.(x); ratio=ratio, kw...)
@@ -341,47 +351,50 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, p
 	end
 	return yp, pm, rmse
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr) > 0
-	rmse = Vector{T}(undef, length(vattr))
+	ma = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
-		y_pr, pm, rmse[i] = SVR.fit_test(y, x; ratio=ratio, kw..., k...)
-		@info("$attr=>$g: $(rmse[i])")
+		y_pr, pm, ma[i] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k...)
+		@info("$attr=>$g: $(ma[i])")
 	end
-	rmse, i = findmin(rmse)
-	return rmse, vattr[i]
+	m, i = rmse ? findmin(ma) : findmax(ma)
+	k = Dict(attr=>vattr[i])
+ 	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
-	rmse = Matrix{T}(undef, length(vattr1), length(vattr2))
+	ma = Matrix{T}(undef, length(vattr1), length(vattr2))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
-			k = Dict(attr1=>a1, attr1=>a2)
-			y_pr, pm, rmse[i, j] = SVR.fit_test(y, x; ratio=ratio, kw..., k...)
-			@info("$attr1=>$a1 $attr2=>$a2: $(rmse[i,j])")
+			k = Dict(attr1=>a1, attr2=>a2)
+			y_pr, pm, ma[i, j] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k...)
+			@info("$attr1=>$a1 $attr2=>$a2: $(ma[i,j])")
 		end
 	end
-	rmse, i = findmin(rmse)
-	return rmse, vattr1[i.I[1]], vattr2[i.I[2]]
+	m, i = rmse ? findmin(ma) : findmax(ma)
+	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]])
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
 	@assert length(vattr3) > 0
-	rmse = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
+	ma = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
 			for (k, a3) in enumerate(vattr3)
-				kk = Dict(attr1=>a1, attr1=>a2, attr3=>a3)
-				y_pr, pm, rmse[i, j, k] = SVR.fit_test(y, x; ratio=ratio, kw..., kk...)
-				@info("$attr1=>$a1 $attr2=>$a2 $attr3=>$a3: $(rmse[i,j,k])")
+				kk = Dict(attr1=>a1, attr2=>a2, attr3=>a3)
+				y_pr, pm, ma[i, j, k] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., kk...)
+				@info("$attr1=>$a1 $attr2=>$a2 $attr3=>$a3: $(ma[i,j,k])")
 			end
 		end
 	end
-	rmse, i = findmin(rmse)
-	return rmse, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]]
+	m, i = rmse ? findmin(ma) : findmax(ma)
+	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]], attr3=>vattr3[i.I[3]])
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
 end
 
 """
@@ -553,7 +566,8 @@ function r2(x::AbstractVector, y::AbstractVector)
 	# sres = sum((x[ii] .- y[ii]) .^ 2)
 	# stot = sum((y[ii] .- Statistics.mean(y[ii])) .^ 2)
 	# r2 = 1. - (sres / stot)
-	return r2
+	r2 = isnan(r2) ? 0 : r2
+ 	return r2
 end
 
 function rmse(t::AbstractVector, o::AbstractVector)
