@@ -222,7 +222,7 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(X), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
 	if maximum(y) > 1 || minimum(y) < -1
 		@warn("Dependent variables should be normalized!")
@@ -304,6 +304,10 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
 	m = Vector{Float64}(undef, repeats)
+	y_pra = Vector{Float64}(undef, 0)
+	ya = Vector{Float64}(undef, 0)
+	pma = Vector{Bool}(undef, 0)
+	local y_pr
 	for r in 1:repeats
 		if repeats > 1 || pm == nothing
 			pm = get_prediction_mask(length(y), ratio; keepcases=keepcases)
@@ -329,9 +333,12 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		if !veryquiet && repeats > 1
 			println("Repeat $r: $(m[r])")
 		end
+		y_pra = vcat(y_pra, y_pr)
+		ya = vcat(ya, y)
+		pma = vcat(pma, pm)
 	end
-	y_pr = y_pr * (ymax - ymin) .+ ymin
-	callback(y, y_pr, pm)
+	y_pra = y_pra * (ymax - ymin) .+ ymin
+	callback(ya, y_pra, pma)
 	return y_pr, pm, Statistics.mean(m)
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T}
@@ -352,21 +359,29 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, p
 	end
 	return yp, pm, rmse
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, check::Function=(v::AbstractVector)->nothing, kw...) where {T}
 	@assert length(vattr) > 0
+	@info("Grid search on $attr with prediction ratio $ratio")
 	ma = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
 		y_pr, pm, ma[i] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., quiet=true)
 		@info("$attr=>$g: $(ma[i])")
 	end
-	m, i = rmse ? findmin(ma) : findmax(ma)
+	c = check(ma)
+	if c == nothing
+		m, i = rmse ? findmin(ma) : findmax(ma)
+	else
+		i = c
+		m = ma[i]
+	end
 	k = Dict(attr=>vattr[i])
  	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
+	@info("Grid search on $attr1/$attr2 with prediction ratio $ratio")
 	ma = Matrix{T}(undef, length(vattr1), length(vattr2))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
@@ -383,6 +398,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
 	@assert length(vattr3) > 0
+	@info("Grid search on $attr1/$attr2/$attr3 with prediction ratio $ratio")
 	ma = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
