@@ -296,7 +296,7 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
 	return yp
 end
 
-function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, callback::Function=(y::AbstractVector, y_pr::AbstractVector, pm::AbstractVector)->nothing, kw...)
 	if keepcases != nothing
 		@assert length(keepcases) == size(x, 2)
 	end
@@ -331,6 +331,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		end
 	end
 	y_pr = y_pr * (ymax - ymin) .+ ymin
+	callback(y, y_pr, pm)
 	return y_pr, pm, Statistics.mean(m)
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T}
@@ -356,12 +357,12 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 	ma = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
-		y_pr, pm, ma[i] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k...)
+		y_pr, pm, ma[i] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., quiet=true)
 		@info("$attr=>$g: $(ma[i])")
 	end
 	m, i = rmse ? findmin(ma) : findmax(ma)
 	k = Dict(attr=>vattr[i])
- 	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
+ 	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr1) > 0
@@ -376,7 +377,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	end
 	m, i = rmse ? findmin(ma) : findmax(ma)
 	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]])
-	return m, vattr1[i.I[1]], vattr2[i.I[2]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, rmse::Bool=true, kw...) where {T}
 	@assert length(vattr1) > 0
@@ -394,7 +395,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	end
 	m, i = rmse ? findmin(ma) : findmax(ma)
 	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]], attr3=>vattr3[i.I[3]])
-	return m, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 
 """
