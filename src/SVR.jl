@@ -339,6 +339,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 	end
 	y_pra = y_pra * (ymax - ymin) .+ ymin
 	callback(ya, y_pra, pma)
+	y_pr = y_pr * (ymax - ymin) .+ ymin
 	return y_pr, pm, Statistics.mean(m)
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T}
