@@ -1,6 +1,6 @@
 name = "SVR"
 uuid = "22bb73d7-edb2-5785-ba1e-7d60d6824784"
-version = "0.8.2"
+version = "1.0.0"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -9,8 +9,8 @@ Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-DocumentFunction = "^0"
-julia = "^1.4"
+DocumentFunction = "1"
+julia = "1.5"
 
 [extras]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
