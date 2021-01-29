@@ -2,18 +2,18 @@
 
 import JLD
 
-immutable svm_node
+struct svm_node
 	index::Cint
 	value::Cdouble
 end
 
-immutable svm_problem
+struct svm_problem
 	l::Cint
 	y::Ptr{Cdouble}
 	x::Ptr{Ptr{svm_node}}
 end
 
-immutable svm_parameter
+struct svm_parameter
 	svm_type::Cint
 	kernel_type::Cint
 	degree::Cint
@@ -33,7 +33,7 @@ immutable svm_parameter
 
 end
 
-immutable svm_model
+struct svm_model
 	param::svm_parameter
 	nr_class::Cint
 	l::Cint
