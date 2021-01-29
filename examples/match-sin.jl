@@ -13,3 +13,7 @@ x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = 1:length(t)]
 Mads.plotseries(x_predict)
 
 Mads.plotseries(sin.(t) * y_predict[1])
+
+Mads.plotseries([x' sin.(t) * y_predict[1]])
+
+Mads.plotseries([x' x_predict])
