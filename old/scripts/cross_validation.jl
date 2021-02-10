@@ -24,7 +24,7 @@ function do_cross_validation(pprob, pparam, nr_fold)
 						)
 	else
 		for i=1:prob.l
-			if target[i] = prob.y[i]
+			if target[i] == prob.y[i]
 				total_correct+=1
 				@printf("Cross Validation Accuracy = %g%%\n",100.0*total_correct/prob.l)
 			end

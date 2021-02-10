@@ -90,22 +90,22 @@ function convertSVM(infile, outfile)
 end
 
 function nodes(instances)
-		nfeatures = size(instances, 1)
-		ninstances = size(instances, 2)
-		nodeptrs = Array(Ptr{svm_node}, ninstances)
-		nodes = Array(svm_node, nfeatures + 1, ninstances)
+	nfeatures = size(instances, 1)
+	ninstances = size(instances, 2)
+	nodeptrs = Array(Ptr{svm_node}, ninstances)
+	nodes = Array(svm_node, nfeatures + 1, ninstances)
 
-		for i=1:ninstances
-				k = 1
-				for j=1:nfeatures
-						nodes[k, i] = svm_node(Int32(j), Float64(instances[j, i]))
-						k += 1
-				end
-				nodes[k, i] = svm_node(Int32(-1), 0.0)
-				nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
+	for i=1:ninstances
+		k = 1
+		for j=1:nfeatures
+			nodes[k, i] = svm_node(Int32(j), Float64(instances[j, i]))
+			k += 1
 		end
+		nodes[k, i] = svm_node(Int32(-1), 0.0)
+		nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
+	end
 
-		(nodes, nodeptrs)
+	return (nodes, nodeptrs)
 end
 
 function csvreadproblem(csvinfile)

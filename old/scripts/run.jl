@@ -10,7 +10,7 @@ else if size(ARGS, 1) == 5
   outputfolder=ARGS[3]
   modelfile=ARGS[4]
   options = ARGS[5]
-else if size(ARGS, 1) == 1 && ARGS[1] = "auto"
+else if size(ARGS, 1) == 1 && ARGS[1] == "auto"
   trailfile, testfile, outputfolder, modelfile =
   "data/wells/wells_trails",
   "data/wells/wells_tests",

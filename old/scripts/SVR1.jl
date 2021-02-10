@@ -122,7 +122,7 @@ function nodes(instances)
 		nodeptrs[i] = pointer(nodes, (i-1)*(nfeatures+1)+1)
 	end
 
-	(nodes, nodeptrs)
+	return (nodes, nodeptrs)
 end
 
 function csvreadproblem(csvinfile)
