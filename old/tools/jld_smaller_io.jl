@@ -30,4 +30,3 @@ save("predict_data.jld", "data", full)
 d = load("predict_data.jld")
 data = d["data"]
 writecsv("predict.csv",data)
-
