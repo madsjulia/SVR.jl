@@ -20,7 +20,7 @@ for i=1:size(dirs, 1)
 	t[:, 1] = obs
 
 	for j=1:size(t, 1)
-	   t[j, 2:end] = features
+		t[j, 2:end] = features
 	end
 
 	full[size(obs, 1)*(i-1) + 1: size(obs, 1)*(i), :] = t
