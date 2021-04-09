@@ -284,10 +284,10 @@ function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ymin=minimum
 	end
 	return (y_pr * (ymax - ymin)) .+ ymin
 end
-function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
+function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	T.(SVR.fit(Float64.(y), Float64.(x); kw...))
 end
-function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
+function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	yp = similar(y)
 	for i = 1:size(y, 2)
@@ -342,11 +342,11 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 	y_pr = y_pr * (ymax - ymin) .+ ymin
 	return y_pr, pm, Statistics.mean(m)
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T <: Number}
 	y_pr, pm, rmse = SVR.fit_test(Float64.(y), Float64.(x); ratio=ratio, kw...)
 	return T.(y_pr), pm, rmse
 end
-function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases=nothing, kw...) where {T}
+function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases=nothing, kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	if keepcases !== nothing
 		@assert length(keepcases) == size(x, 2)
@@ -360,7 +360,7 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, p
 	end
 	return yp, pm, rmse
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, check::Function=(v::AbstractVector)->nothing, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, check::Function=(v::AbstractVector)->nothing, kw...) where {T <: Number}
 	@assert length(vattr) > 0
 	@info("Grid search on $attr with prediction ratio $ratio")
 	ma = Vector{T}(undef, length(vattr))
@@ -379,7 +379,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 	k = Dict(attr=>vattr[i])
  	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T <: Number}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
 	@info("Grid search on $attr1/$attr2 with prediction ratio $ratio")
@@ -395,7 +395,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]])
 	return m, vattr1[i.I[1]], vattr2[i.I[2]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
-function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, rmse::Bool=true, kw...) where {T}
+function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, rmse::Bool=true, kw...) where {T <: Number}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
 	@assert length(vattr3) > 0
@@ -471,10 +471,10 @@ function apredict(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 	end
 	return p
 end
-function apredict(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T}
+function apredict(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	T.(SVR.apredict(Float64.(y), Float64.(x); kw...))
 end
-function apredict(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T}
+function apredict(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	yp = similar(y)
 	for i = 1:size(y, 2)
