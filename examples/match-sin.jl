@@ -10,7 +10,7 @@ pmodel = SVR.train(x, permutedims(y); tol=0.001, epsilon=0.1)
 y_predict = [0.75]
 x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = 1:length(t)]
 
-Mads.plotseries(x_predict)
+Mads.plotseries(x_predict, "predict.png")
 
 Mads.plotseries(sin.(t) * y_predict[1])
 
