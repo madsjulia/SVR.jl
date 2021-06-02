@@ -12,6 +12,7 @@ import DocumentFunction
 import Statistics
 
 include("SVRconstants.jl")
+include("SVRlib.jl")
 include("SVRfunctions.jl")
 
 end
