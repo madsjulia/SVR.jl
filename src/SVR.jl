@@ -188,14 +188,14 @@ function mapnodes(x::AbstractArray)
 	ninstances = size(x, 2)
 	nodeptrs = Array{Ptr{svm_node}}(undef, ninstances)
 	nodes = Array{svm_node, 2}(undef, nfeatures + 1, ninstances)
-	for i=1:ninstances
-		for j=1:nfeatures
+	for i = 1:ninstances
+		for j = 1:nfeatures
 			nodes[j, i] = svm_node(Cint(j), Float64(x[j, i]))
 		end
 		nodes[nfeatures + 1, i] = svm_node(Cint(-1), NaN)
 		nodeptrs[i] = pointer(nodes, (i - 1) * (nfeatures + 1) +1)
 	end
-	(nodes, nodeptrs)
+	return nodes, nodeptrs
 end
 
 const svrdir = splitdir(splitdir(pathof(SVR))[1])[1]
@@ -241,7 +241,7 @@ function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::
 		a = y
 	end
 	param = mapparam(; svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, epsilon=epsilon, cache_size=cache_size, tolerance=tol, shrinking=shrinking, probability=probability)
-	(nodes, nodeptrs) = mapnodes(x)
+	nodes, nodeptrs = mapnodes(x)
 	prob = svm_problem(length(a), pointer(a), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	return svmmodel(plibsvmmodel, param, prob, nodes)
@@ -271,15 +271,21 @@ Return:
 - predicted dependent variables
 """
 function predict(pmodel::svmmodel, x::AbstractArray{Float64})
-	nx = size(x, 2)
+	nn, nx = size(x)
 	y = Array{Float64}(undef, nx)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
-		(nodes, nodeptrs) = mapnodes(x)
-		for i = 1:nx
-			y[i] = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
+		nn2, nx2 = size(pmodel.nodes)
+		if nn2 - 1 != nn
+			@warn("SVR model node count $(nn2) does not match input dimensions $(nn)")
+			y .= NaN
+		else
+			nodes, nodeptrs = mapnodes(x)
+			for i = 1:nx
+				y[i] = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
+			end
 		end
 	else
-		warn("SVR model is not defined")
+		@warn("SVR model is not defined")
 		y .= NaN
 	end
 	return y
@@ -510,9 +516,10 @@ Returns:
 """
 function loadmodel(filename::String)
 	param = mapparam()
-	x = Array{Float64}(undef, 0)
-	y = Array{Float64}(undef, 0)
-	(nodes, nodeptrs) = mapnodes(x)
+	nnodes, ssize = Int.(DelimitedFiles.readdlm(splitext(filename)[1] .* ".nodes"))
+	x = Array{Float64}(undef, nnodes - 1)
+	y = Array{Float64}(undef, ssize - 1)
+	nodes, nodeptrs = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
 	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
 	return svmmodel(plibsvmmodel, param, prob, nodes)
@@ -532,8 +539,10 @@ Dumps:
 function savemodel(pmodel::svmmodel, filename::String)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
 		ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
+		nnodes, ssize = size(pmodel.nodes)
+		DelimitedFiles.writedlm(splitext(filename)[1] .* ".nodes", (nnodes, ssize))
 	end
-	nothing
+	return nothing
 end
 
 """
@@ -547,7 +556,7 @@ function freemodel(pmodel::svmmodel)
 		ccall(svm_free_model_content(), Nothing, (Ptr{Nothing},), pmodel.plibsvmmodel)
 		pmodel.plibsvmmodel = Ptr{SVR.svm_model}(C_NULL)
 	end
-	nothing
+	return nothing
 end
 
 """
