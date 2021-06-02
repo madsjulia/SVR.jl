@@ -198,6 +198,13 @@ function mapnodes(x::AbstractArray)
 	(nodes, nodeptrs)
 end
 
+const svrdir = splitdir(splitdir(pathof(SVR))[1])[1]
+
+"Test SVR"
+function test()
+	include(joinpath(svrdir, "test", "runtests.jl"))
+end
+
 """
 Train based on a libSVM model
 
@@ -222,12 +229,12 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false, scale::Bool=false, ymin::Float64=minimum(y), ymax::Float64=maximum(y), normalize::Bool=true)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false, ymin::Float64=minimum(y), ymax::Float64=maximum(y), scale::Bool=false, normalize::Bool=true)
 	@assert length(y) == size(x, 2)
-	if (ymax > 1 || ymin < -1) && normalize
+	if (ymax > 1 || ymin < -1) && (normalize || scale)
 		@info("Dependent variables will be normalized!")
 	end
-	if normalize
+	if normalize || scale
 		ymin = scale ? 0 : ymin
 		a = (y .- ymin) ./ (ymax - ymin)
 	else
@@ -284,7 +291,7 @@ end
 function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; scale::Bool=false, ymin=minimum(y), ymax=maximum(y), kw...)
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
-	pmodel = SVR.train(a, x; kw...)
+	pmodel = SVR.train(a, x; scale=false, normalize=false, kw...)
 	y_pr = SVR.predict(pmodel, x)
 	SVR.freemodel(pmodel)
 	if any(isnan.(y_pr))
@@ -327,7 +334,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		if !quiet && repeats == 1 && length(y) > ic
 			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
 		end
-		pmodel = SVR.train(a[.!pm], x[:,.!pm]; kw...)
+		pmodel = SVR.train(a[.!pm], x[:,.!pm]; scale=false, normalize=false, kw...)
 		y_pr = SVR.predict(pmodel, x)
 		SVR.freemodel(pmodel)
 		if any(isnan.(y_pr))
