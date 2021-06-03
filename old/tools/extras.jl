@@ -1,4 +1,4 @@
-function convertSVM(infile::String, outfile::String)
+function convertSVM(infile::AbstractString, outfile::AbstractString)
 	fin = open(infile, "r")
 	fout = open(outfile, "a")
 	while true
@@ -28,7 +28,7 @@ function csvreadproblem(csvinfile)
 	return pprob1, prob1
 end
 
-function jldreadproblem(jldinfile::String)
+function jldreadproblem(jldinfile::AbstractString)
 	p = JLD.load(jldinfile)
 	p = trunc(p[collect(keys(p))[1]], 5)
 	pp = p[:, 2:end]
@@ -92,14 +92,14 @@ function getbar()
 	return barlen
 end
 
-function params_from_opts(options::String)
+function params_from_opts(options::AbstractString)
 	parammaker = string("fillparam(", options, ")")
 	param = eval(parse(parammaker))
 	pparam = convert(Ptr{svm_parameter}, pointer_from_objref(param))
 	return pparam, param
 end
 
-function do_cross_validation(trailfile, nr_fold; options::String="")
+function do_cross_validation(trailfile, nr_fold; options::AbstractString="")
 	fileend = trailfile[end-3:end]
 	if fileend == ".csv"
 		pprob, prob = csvreadproblem(trailfile)

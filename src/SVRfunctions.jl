@@ -314,7 +314,7 @@ Returns:
 
 - SVM model
 """
-function loadmodel(filename::String)
+function loadmodel(filename::AbstractString)
 	param = mapparam()
 	nnodes, ssize = Int.(DelimitedFiles.readdlm(splitext(filename)[1] .* ".nodes"))
 	x = Array{Float64}(undef, nnodes - 1)
@@ -336,7 +336,7 @@ Dumps:
 
 - file with saved model
 """
-function savemodel(pmodel::svmmodel, filename::String)
+function savemodel(pmodel::svmmodel, filename::AbstractString)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
 		ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
 		nnodes, ssize = size(pmodel.nodes)
@@ -370,7 +370,7 @@ Returns:
 - array of independent variables
 - vector of dependent variables
 """
-function readlibsvmfile(file::String)
+function readlibsvmfile(file::AbstractString)
 	d = DelimitedFiles.readdlm(file)
 	(o, p) = size(d)
 	x = Array{Float64}(undef, o, p - 1)
