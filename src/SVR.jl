@@ -10,7 +10,9 @@ import Libdl
 import DelimitedFiles
 import DocumentFunction
 import Statistics
+import Suppressor
 import libsvm_jll
+import LIBLINEAR
 
 include("SVRconstants.jl")
 include("SVRlib.jl")

@@ -1,49 +1,4 @@
 """
-catch lib output
-
-$(DocumentFunction.documentfunction(liboutput; argtext=Dict("str"=>"string")))
-"""
-function liboutput(str::Ptr{UInt8})
-	if verbosity
-		print(unsafe_string(str))
-	end
-	nothing
-end
-
-# get library
-let libsvm = C_NULL
-	global get_lib
-	function get_lib()
-		if libsvm == C_NULL
-			libpath = joinpath(dirname(@__FILE__), "..", "deps", "libsvm-3.22")
-			libfile = joinpath(libpath, "libsvm.so.2")
-			libsvm = Libdl.dlopen(libfile)
-			ccall(Libdl.dlsym(libsvm, :svm_set_print_string_function), Nothing, (Ptr{Nothing},), @cfunction(liboutput, Nothing, (Ptr{UInt8},)))
-		end
-		libsvm
-	end
-end
-
-# make lib function calls
-macro cachedsym(symname::Symbol)
-	cached = gensym()
-	quote
-		let $cached = C_NULL
-			global ($symname)
-			($symname)() = ($cached) == C_NULL ?
-				($cached = Libdl.dlsym(get_lib(), $(string(symname)))) :
-					$cached
-		end
-	end
-end
-
-@cachedsym svm_train
-@cachedsym svm_predict
-@cachedsym svm_save_model
-@cachedsym svm_load_model
-@cachedsym svm_free_model_content
-
-"""
 $(DocumentFunction.documentfunction(mapparam;
 keytext=Dict("svm_type"=>"SVM type [default=`EPSILON_SVR`]",
             "kernel_type"=>"kernel type [default=`RBF`]",

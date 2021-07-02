@@ -43,7 +43,8 @@ function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::
 	param = mapparam(; svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, epsilon=epsilon, cache_size=cache_size, tolerance=tol, shrinking=shrinking, probability=probability)
 	nodes, nodeptrs = mapnodes(x)
 	prob = svm_problem(length(a), pointer(a), pointer(nodeptrs))
-	plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
+	local plibsvmmodel
+	@Suppressor.suppress (plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param)))
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 function train(y::AbstractVector, x::AbstractArray; kw...)

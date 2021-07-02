@@ -9,10 +9,13 @@ Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LIBLINEAR = "2d691ee1-e668-5016-a719-b2531b85e0f5"
 libsvm_jll = "08558c22-525a-5d2a-acf6-0ac6658ffce4"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 
 [compat]
-LIBLINEAR = "0.5, 0.6"
+LIBLINEAR = "0.6, 0.7"
 DocumentFunction = "1"
+Suppressor = "0.2, 0.3"
+libsvm_jll = "3"
 julia = "1.6"
 
 [extras]
