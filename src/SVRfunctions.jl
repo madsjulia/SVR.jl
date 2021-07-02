@@ -43,7 +43,7 @@ function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::
 	param = mapparam(; svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, epsilon=epsilon, cache_size=cache_size, tolerance=tol, shrinking=shrinking, probability=probability)
 	nodes, nodeptrs = mapnodes(x)
 	prob = svm_problem(length(a), pointer(a), pointer(nodeptrs))
-	plibsvmmodel = ccall(svm_train(), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
+	plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 function train(y::AbstractVector, x::AbstractArray; kw...)
@@ -81,7 +81,7 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 		else
 			nodes, nodeptrs = mapnodes(x)
 			for i = 1:nx
-				y[i] = ccall(svm_predict(), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
+				y[i] = ccall((:svm_predict, libsvm_jll.libsvm), Float64, (Ptr{svm_model}, Ptr{svm_node}), pmodel.plibsvmmodel, nodeptrs[i])
 			end
 		end
 	else
@@ -321,7 +321,7 @@ function loadmodel(filename::AbstractString)
 	y = Array{Float64}(undef, ssize - 1)
 	nodes, nodeptrs = mapnodes(x)
 	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
-	plibsvmmodel = ccall(svm_load_model(), Ptr{svm_model}, (Ptr{UInt8},), filename)
+	plibsvmmodel = ccall((:svm_load_model, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{UInt8},), filename)
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 
@@ -338,7 +338,7 @@ Dumps:
 """
 function savemodel(pmodel::svmmodel, filename::AbstractString)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
-		ccall(svm_save_model(), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
+		ccall((:svm_save_model, libsvm_jll.libsvm), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
 		nnodes, ssize = size(pmodel.nodes)
 		DelimitedFiles.writedlm(splitext(filename)[1] .* ".nodes", (nnodes, ssize))
 	end
@@ -353,7 +353,7 @@ argtext=Dict("pmodel"=>"svm model")))
 """
 function freemodel(pmodel::svmmodel)
 	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
-		ccall(svm_free_model_content(), Nothing, (Ptr{Nothing},), pmodel.plibsvmmodel)
+		ccall((:svm_free_model_content, libsvm_jll.libsvm), Nothing, (Ptr{Nothing},), pmodel.plibsvmmodel)
 		pmodel.plibsvmmodel = Ptr{SVR.svm_model}(C_NULL)
 	end
 	return nothing
