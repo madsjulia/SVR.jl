@@ -29,22 +29,17 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false, ymin::Float64=minimum(y), ymax::Float64=maximum(y), scale::Bool=false, normalize::Bool=false)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false)
 	@assert length(y) == size(x, 2)
-	if (ymax > 1 || ymin < -1) && !(normalize || scale)
-		@info("Dependent variables should be normalized!")
-	end
-	if normalize || scale
-		ymin = scale ? 0 : ymin
-		a = (y .- ymin) ./ (ymax - ymin)
-	else
-		a = y
-	end
 	param = mapparam(; svm_type=svm_type, kernel_type=kernel_type, degree=degree, gamma=gamma, coef0=coef0, C=C, nu=nu, epsilon=epsilon, cache_size=cache_size, tolerance=tol, shrinking=shrinking, probability=probability)
 	nodes, nodeptrs = mapnodes(x)
-	prob = svm_problem(length(a), pointer(a), pointer(nodeptrs))
-	local plibsvmmodel
-	@Suppressor.suppress (plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param)))
+	prob = svm_problem(length(y), pointer(y), pointer(nodeptrs))
+	if !verbose
+		local plibsvmmodel
+		@Suppressor.suppress (plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param)))
+	else
+		plibsvmmodel = ccall((:svm_train, libsvm_jll.libsvm), Ptr{svm_model}, (Ptr{svm_problem}, Ptr{svm_parameter}), pointer_from_objref(prob), pointer_from_objref(param))
+	end
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 function train(y::AbstractVector, x::AbstractArray; kw...)
