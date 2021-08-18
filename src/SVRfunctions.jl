@@ -29,10 +29,10 @@ Returns:
 
 - SVM model
 """
-function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false, ymin::Float64=minimum(y), ymax::Float64=maximum(y), scale::Bool=false, normalize::Bool=true)
+function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::Int32=EPSILON_SVR, kernel_type::Int32=RBF, degree::Integer=3, gamma::Float64=1/maximum(x), coef0::Float64=0.0, C::Float64=1.0, nu::Float64=0.1, epsilon::Float64=1e-4, cache_size::Float64=100.0, tol::Float64=0.001, shrinking::Bool=true, probability::Bool=false, verbose::Bool=false, ymin::Float64=minimum(y), ymax::Float64=maximum(y), scale::Bool=false, normalize::Bool=false)
 	@assert length(y) == size(x, 2)
-	if (ymax > 1 || ymin < -1) && (normalize || scale)
-		@info("Dependent variables will be normalized!")
+	if (ymax > 1 || ymin < -1) && !(normalize || scale)
+		@info("Dependent variables should be normalized!")
 	end
 	if normalize || scale
 		ymin = scale ? 0 : ymin
@@ -48,14 +48,14 @@ function train(y::AbstractVector{Float64}, x::AbstractArray{Float64}; svm_type::
 	return svmmodel(plibsvmmodel, param, prob, nodes)
 end
 function train(y::AbstractVector, x::AbstractArray; kw...)
-	SVR.train(Float64.(y), Float64.(x); kw...)
+	train(Float64.(y), Float64.(x); kw...)
 end
 function train(y::AbstractArray, x::AbstractArray; kw...)
 	@assert size(y, 1) == size(x, 2)
 	nm = size(y, 2)
 	m = Vector{svmmodel}(undef, nm)
 	for i = 1:nm
-		m[i] = SVR.train(vec(y[:,i]), x; kw...)
+		m[i] = train(vec(y[:,i]), x; kw...)
 	end
 	return m
 end
@@ -72,9 +72,10 @@ Return:
 - predicted dependent variables
 """
 function predict(pmodel::svmmodel, x::AbstractArray{Float64})
-	nn, nx = size(x)
+	nn = size(x, 1)
+	nx = size(x, 2)
 	y = Array{Float64}(undef, nx)
-	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
+	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		nn2, nx2 = size(pmodel.nodes)
 		if nn2 - 1 != nn
 			@error("SVR model node count $(nn2) does not match input dimensions $(nn)")
@@ -92,28 +93,28 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 	return y
 end
 function predict(pmodel::svmmodel, x::AbstractArray{T}) where {T}
-	T.(SVR.predict(pmodel, Float64.(x)))
+	T.(predict(pmodel, Float64.(x)))
 end
 
 function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; scale::Bool=false, ymin=minimum(y), ymax=maximum(y), kw...)
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
-	pmodel = SVR.train(a, x; scale=false, normalize=false, kw...)
-	y_pr = SVR.predict(pmodel, x)
-	SVR.freemodel(pmodel)
+	pmodel = train(a, x; scale=false, normalize=false, kw...)
+	y_pr = predict(pmodel, x)
+	freemodel(pmodel)
 	if any(isnan.(y_pr))
 		@warn("SVR output contains NaN's")
 	end
 	return (y_pr * (ymax - ymin)) .+ ymin
 end
 function fit(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T <: Number}
-	T.(SVR.fit(Float64.(y), Float64.(x); kw...))
+	T.(fit(Float64.(y), Float64.(x); kw...))
 end
 function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	yp = similar(y)
 	for i = 1:size(y, 2)
-		yp[:,i] = SVR.fit(vec(y[:,i]), x; kw...)
+		yp[:,i] = fit(vec(y[:,i]), x; kw...)
 	end
 	return yp
 end
@@ -141,16 +142,16 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		if !quiet && repeats == 1 && length(y) > ic
 			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
 		end
-		pmodel = SVR.train(a[.!pm], x[:,.!pm]; scale=false, normalize=false, kw...)
-		y_pr = SVR.predict(pmodel, x)
-		SVR.freemodel(pmodel)
+		pmodel = train(a[.!pm], x[:,.!pm]; scale=false, normalize=false, kw...)
+		y_pr = predict(pmodel, x)
+		freemodel(pmodel)
 		if any(isnan.(y_pr))
 			@warn("SVR output contains NaN's")
 		end
 		if rmse
-			m[r] = total ? SVR.rmse(y_pr, a) : SVR.rmse(y_pr[pm], a[pm])
+			m[r] = total ? rmse(y_pr, a) : rmse(y_pr[pm], a[pm])
 		else
-			m[r] = total ? SVR.r2(y_pr, a) : SVR.r2(y_pr[pm], a[pm])
+			m[r] = total ? r2(y_pr, a) : r2(y_pr[pm], a[pm])
 		end
 		if !veryquiet && repeats > 1
 			println("Repeat $r: $(m[r])")
@@ -165,7 +166,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 	return y_pr, pm, Statistics.mean(m)
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, kw...) where {T <: Number}
-	y_pr, pm, rmse = SVR.fit_test(Float64.(y), Float64.(x); ratio=ratio, kw...)
+	y_pr, pm, rmse = fit_test(Float64.(y), Float64.(x); ratio=ratio, kw...)
 	return T.(y_pr), pm, rmse
 end
 function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases=nothing, kw...) where {T <: Number}
@@ -178,7 +179,7 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, p
 	end
 	yp = similar(y)
 	for i = 1:size(y, 2)
-		yp[:,i], _, rmse = SVR.fit_test(vec(y[:,i]), x; ratio=ratio, pm=pm, kw...)
+		yp[:,i], _, rmse = fit_test(vec(y[:,i]), x; ratio=ratio, pm=pm, kw...)
 	end
 	return yp, pm, rmse
 end
@@ -188,7 +189,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 	ma = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
-		y_pr, pm, ma[i] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., quiet=true)
+		y_pr, pm, ma[i] = fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., quiet=true)
 		@info("$attr=>$g: $(ma[i])")
 	end
 	c = check(ma)
@@ -199,7 +200,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 		m = ma[i]
 	end
 	k = Dict(attr=>vattr[i])
- 	return m, vattr[i], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
+ 	return m, vattr[i], fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T <: Number}
 	@assert length(vattr1) > 0
@@ -209,13 +210,13 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
 			k = Dict(attr1=>a1, attr2=>a2)
-			y_pr, pm, ma[i, j] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k...)
+			y_pr, pm, ma[i, j] = fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k...)
 			@info("$attr1=>$a1 $attr2=>$a2: $(ma[i,j])")
 		end
 	end
 	m, i = rmse ? findmin(ma) : findmax(ma)
 	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]])
-	return m, vattr1[i.I[1]], vattr2[i.I[2]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}, vattr3::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, attr3=:C, rmse::Bool=true, kw...) where {T <: Number}
 	@assert length(vattr1) > 0
@@ -227,14 +228,14 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 		for (j, a2) in enumerate(vattr2)
 			for (k, a3) in enumerate(vattr3)
 				kk = Dict(attr1=>a1, attr2=>a2, attr3=>a3)
-				y_pr, pm, ma[i, j, k] = SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., kk...)
+				y_pr, pm, ma[i, j, k] = fit_test(y, x; ratio=ratio, rmse=rmse, kw..., kk...)
 				@info("$attr1=>$a1 $attr2=>$a2 $attr3=>$a3: $(ma[i,j,k])")
 			end
 		end
 	end
 	m, i = rmse ? findmin(ma) : findmax(ma)
 	k = Dict(attr1=>vattr1[i.I[1]], attr2=>vattr2[i.I[2]], attr3=>vattr3[i.I[3]])
-	return m, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]], SVR.fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
+	return m, vattr1[i.I[1]], vattr2[i.I[2]], vattr3[i.I[3]], fit_test(y, x; ratio=ratio, rmse=rmse, kw..., k..., repeats=1)...
 end
 
 """
@@ -294,13 +295,13 @@ function apredict(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 	return p
 end
 function apredict(y::AbstractVector{T}, x::AbstractArray{T}; kw...) where {T <: Number}
-	T.(SVR.apredict(Float64.(y), Float64.(x); kw...))
+	T.(apredict(Float64.(y), Float64.(x); kw...))
 end
 function apredict(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	yp = similar(y)
 	for i = 1:size(y, 2)
-		yp[:,i] = SVR.apredict(vec(y[:,i]), x; kw...)
+		yp[:,i] = apredict(vec(y[:,i]), x; kw...)
 	end
 	return yp
 end
@@ -338,7 +339,7 @@ Dumps:
 - file with saved model
 """
 function savemodel(pmodel::svmmodel, filename::AbstractString)
-	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
+	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		ccall((:svm_save_model, libsvm_jll.libsvm), Cint, (Ptr{UInt8}, Ptr{svm_model}), filename, pmodel.plibsvmmodel)
 		nnodes, ssize = size(pmodel.nodes)
 		DelimitedFiles.writedlm(splitext(filename)[1] .* ".nodes", (nnodes, ssize))
@@ -353,9 +354,9 @@ $(DocumentFunction.documentfunction(freemodel;
 argtext=Dict("pmodel"=>"svm model")))
 """
 function freemodel(pmodel::svmmodel)
-	if pmodel.plibsvmmodel != Ptr{SVR.svm_model}(C_NULL)
+	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		ccall((:svm_free_model_content, libsvm_jll.libsvm), Nothing, (Ptr{Nothing},), pmodel.plibsvmmodel)
-		pmodel.plibsvmmodel = Ptr{SVR.svm_model}(C_NULL)
+		pmodel.plibsvmmodel = Ptr{svm_model}(C_NULL)
 	end
 	return nothing
 end
