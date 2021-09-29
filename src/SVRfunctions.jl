@@ -94,7 +94,7 @@ end
 function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; scale::Bool=false, ymin=minimum(y), ymax=maximum(y), kw...)
 	ymin = scale ? 0 : ymin
 	a = (y .- ymin) ./ (ymax - ymin)
-	pmodel = train(a, x; scale=false, normalize=false, kw...)
+	pmodel = train(a, x; kw...)
 	y_pr = predict(pmodel, x)
 	freemodel(pmodel)
 	if any(isnan.(y_pr))
@@ -137,7 +137,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		if !quiet && repeats == 1 && length(y) > ic
 			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
 		end
-		pmodel = train(a[.!pm], x[:,.!pm]; scale=false, normalize=false, kw...)
+		pmodel = train(a[.!pm], x[:,.!pm]; kw...)
 		y_pr = predict(pmodel, x)
 		freemodel(pmodel)
 		if any(isnan.(y_pr))
