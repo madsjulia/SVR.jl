@@ -114,7 +114,7 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number
 	return yp
 end
 
-function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, callback::Function=(y::AbstractVector, y_pr::AbstractVector, pm::AbstractVector)->nothing, kw...)
+function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases::Union{BitArray,Nothing}=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, callback::Function=(y::AbstractVector, y_pr::AbstractVector, pm::AbstractVector)->nothing, kw...)
 	if keepcases !== nothing
 		@assert length(keepcases) == size(x, 2)
 	end
@@ -164,7 +164,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, 
 	y_pr, pm, rmse = fit_test(Float64.(y), Float64.(x); ratio=ratio, kw...)
 	return T.(y_pr), pm, rmse
 end
-function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases=nothing, kw...) where {T <: Number}
+function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases::Union{BitArray,Nothing}=nothing, kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
 	if keepcases !== nothing
 		@assert length(keepcases) == size(x, 2)
@@ -244,7 +244,8 @@ Return:
 
 - prediction mask
 """
-function get_prediction_mask(ns::Number, ratio::Number; keepcases=nothing)
+function get_prediction_mask(ns::Number, ratio::Number; keepcases::Union{AbstractVector,Nothing}=nothing, debug::Bool=false)
+	nsi = copy(ns)
 	pm = trues(ns)
 	ic = convert(Int64, ceil(ns * (1. - ratio)))
 	if keepcases !== nothing
@@ -253,18 +254,24 @@ function get_prediction_mask(ns::Number, ratio::Number; keepcases=nothing)
 		if ic > kn && ns > kn
 			pm[keepcases] .= false
 			ic -= kn
-			ns -= kn
+			nsi -= kn
 		else
 			kn > 0 && @warn("Number of cases to keep is larger ($(kn)) than allowed samples to keep ($(ic))!")
 		end
 	end
-	ir = sortperm(rand(ns))[1:ic]
-	if keepcases !== nothing && ic > kn
-		m = trues(ns)
-		m[ir] .= false
-		pm[.!keepcases] .= m
-	else
-		pm[ir] .= false
+	if nsi > ic
+		ir = sortperm(rand(nsi))[1:ic]
+		if keepcases !== nothing && ic > kn
+			m = trues(ns)
+			m[ir] .= false
+			pm[.!keepcases] .= m
+		else
+			pm[ir] .= false
+		end
+	end
+	if debug
+		@info("Number of cases for training: ($(ns - sum(pm)))")
+		@info("Number of cases for prediction: ($(sum(pm)))")
 	end
 	return pm
 end
