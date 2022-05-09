@@ -73,7 +73,7 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		nn2, nx2 = size(pmodel.nodes)
 		if nn2 - 1 != nn
-			@error("SVR model node count $(nn2) does not match input dimensions $(nn)")
+			@error("SVR model node count $(nn2 - 1) does not match input dimensions $(nn)")
 			y .= NaN
 		else
 			nodes, nodeptrs = mapnodes(x)
@@ -270,8 +270,8 @@ function get_prediction_mask(ns::Number, ratio::Number; keepcases::Union{Abstrac
 		end
 	end
 	if debug
-		@info("Number of cases for training: ($(ns - sum(pm)))")
-		@info("Number of cases for prediction: ($(sum(pm)))")
+		@info("Number of cases for training: $(ns - sum(pm))")
+		@info("Number of cases for prediction: $(sum(pm))")
 	end
 	return pm
 end
