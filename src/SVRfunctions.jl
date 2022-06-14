@@ -256,13 +256,13 @@ function get_prediction_mask(ns::Number, ratio::Number; keepcases::Union{Abstrac
 			ic -= kn
 			nsi -= kn
 		else
-			kn > ic && @warn("Number of cases requestd to keep is larger ($(kn)) than the number of cases allowed samples to keep ($(ic))!")
+			kn > ic && @warn("Number of cases requested to keep is larger ($(kn)) than the number of cases allowed samples to keep ($(ic))!")
 		end
 	end
 	if nsi >= ic
 		ir = sortperm(rand(nsi))[1:ic]
 		if keepcases !== nothing && ic > kn
-			m = trues(ns)
+			m = trues(nsi)
 			m[ir] .= false
 			pm[.!keepcases] .= m
 		else
