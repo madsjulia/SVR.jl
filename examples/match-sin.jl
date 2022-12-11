@@ -10,7 +10,7 @@ Mads.plotseries(x'; names=["Train #1", "Train #2"])
 pmodel = SVR.train(x, permutedims(y))
 
 y_predict = [0.75]
-x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = 1:length(t)]
+x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = eachindex(t)]
 
 Mads.plotseries([x' sin.(t) * y_predict[1]]; names=["Train #1", "Train #2", "True"], xmax=101)
 
@@ -24,7 +24,7 @@ pmodel = SVR.train(x, permutedims(y))
 
 y_predict = [0.75, 0.1, 0.2]
 x_true = y_predict[1] .* t' .^ 0.5 + y_predict[2] .* t' .+ y_predict[3]
-x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = 1:length(t)]
+x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = eachindex(t)]
 
 Mads.plotseries(x')
 
