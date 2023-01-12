@@ -73,7 +73,7 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		nn2, nx2 = size(pmodel.nodes)
 		if nn2 - 1 != nn
-			@error("SVR model node count $(nn2 - 1) does not match input dimensions $(nn)")
+			@error("SVR model node count $(nn2 - 1) does not match input dimensions $(nn)!")
 			y .= NaN
 		else
 			nodes, nodeptrs = mapnodes(x)
@@ -82,7 +82,7 @@ function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 			end
 		end
 	else
-		@warn("SVR model is not defined")
+		@warn("SVR model is not defined!")
 		y .= NaN
 	end
 	return y
@@ -98,7 +98,7 @@ function fit(y::AbstractVector{Float64}, x::AbstractArray{Float64}; scale::Bool=
 	y_pr = predict(pmodel, x)
 	freemodel(pmodel)
 	if any(isnan.(y_pr))
-		@warn("SVR output contains NaN's")
+		@warn("SVR output contains NaN's!")
 	end
 	return (y_pr * (ymax - ymin)) .+ ymin
 end
@@ -135,13 +135,13 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 		end
 		ic = sum(.!pm)
 		if !quiet && repeats == 1 && length(y) > ic
-			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio)")
+			@info("Training on $(ic) out of $(length(y)) (prediction ratio $ratio) ...")
 		end
 		pmodel = train(a[.!pm], x[:,.!pm]; kw...)
 		y_pr = predict(pmodel, x)
 		freemodel(pmodel)
 		if any(isnan.(y_pr))
-			@warn("SVR output contains NaN's")
+			@warn("SVR output contains NaN's!")
 		end
 		if rmse
 			m[r] = total ? rmse(y_pr, a) : rmse(y_pr[pm], a[pm])
@@ -180,7 +180,7 @@ function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, p
 end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr=:gamma, rmse::Bool=true, check::Function=(v::AbstractVector)->nothing, kw...) where {T <: Number}
 	@assert length(vattr) > 0
-	@info("Grid search on $attr with prediction ratio $ratio")
+	@info("Grid search on $attr with prediction ratio $ratio ...")
 	ma = Vector{T}(undef, length(vattr))
 	for (i, g) in enumerate(vattr)
 		k = Dict(attr=>g)
@@ -200,7 +200,7 @@ end
 function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{AbstractVector,AbstractRange}, vattr2::Union{AbstractVector,AbstractRange}; ratio::Number=0.1, attr1=:gamma, attr2=:epsilon, rmse::Bool=true, kw...) where {T <: Number}
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
-	@info("Grid search on $attr1/$attr2 with prediction ratio $ratio")
+	@info("Grid search on $attr1/$attr2 with prediction ratio $ratio ...")
 	ma = Matrix{T}(undef, length(vattr1), length(vattr2))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
@@ -217,7 +217,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr1::Union{Abstr
 	@assert length(vattr1) > 0
 	@assert length(vattr2) > 0
 	@assert length(vattr3) > 0
-	@info("Grid search on $attr1/$attr2/$attr3 with prediction ratio $ratio")
+	@info("Grid search on $attr1/$attr2/$attr3 with prediction ratio $ratio ...")
 	ma = Array{T}(undef, length(vattr1), length(vattr2), length(vattr3))
 	for (i, a1) in enumerate(vattr1)
 		for (j, a2) in enumerate(vattr2)
@@ -292,7 +292,7 @@ function apredict(y::AbstractVector{Float64}, x::AbstractArray{Float64}; kw...)
 	p = predict(svmmodel, x)
 	freemodel(svmmodel)
 	if any(isnan.(p))
-		@warn("SVR output contains NaN's")
+		@warn("SVR output contains NaN's!")
 	end
 	return p
 end
