@@ -1,13 +1,16 @@
+import Distributed
+Distributed.addprocs(4)
 import Mads
 import SVR
 
-t = collect(0:0.1:10)
-y = [1., 0.5]
-x = sin.(permutedims(t)) .* y
+@Distributed.everywhere t = collect(0:0.1:10)
+@Distributed.everywhere y = [1., 0.5]
+@Distributed.everywhere x = sin.(permutedims(t)) .* y
 
 Mads.plotseries(x'; names=["Train #1", "Train #2"])
 
-pmodel = SVR.train(x, permutedims(y))
+@Distributed.everywhere pmodel = SVR.train(x, permutedims(y))
+@Distributed.everywhere @show SVR.predict(pmodel[10], [0.75])
 
 y_predict = [0.75]
 x_predict = [SVR.predict(pmodel[i], y_predict)[1] for i = eachindex(t)]
