@@ -84,4 +84,3 @@ Publications, Presentations, Projects
 * [mads.gitlab.io](http://mads.gitlab.io)
 * [TensorDecompositions](https://tensordecompositions.github.io)
 * [monty.gitlab.io](http://monty.gitlab.io)
-* [ees.lanl.gov/monty](https://www.lanl.gov/orgs/ees/staff/monty)
