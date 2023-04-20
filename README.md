@@ -76,11 +76,15 @@ Projects using SVR
 -----------------
 
 * [MADS](https://github.com/madsjulia)
-* [TensorDecompositions](https://github.com/TensorDecompositions)
+* [SmartTensors](https://github.com/SmartTensors)
+* [SmartML](https://github.com/SmartTensors/SmartML.jl)
 
 Publications, Presentations, Projects
 --------------------------
 
 * [mads.gitlab.io](http://mads.gitlab.io)
-* [TensorDecompositions](https://tensordecompositions.github.io)
+* [madsjulia.github.io](https://madsjulia.github.io)
+* [SmartTensors](https://SmartTensors.github.io)
 * [monty.gitlab.io](http://monty.gitlab.io)
+* [montyv.github.io)]((https://montyv.github.io)
+
