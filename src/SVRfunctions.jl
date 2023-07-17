@@ -115,7 +115,7 @@ function fit(y::AbstractArray{T}, x::AbstractArray{T}; kw...) where {T <: Number
 end
 
 function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::Number=0.1, repeats::Number=1, pm=nothing, keepcases::Union{BitArray,Nothing}=nothing, scale::Bool=false, ymin::Number=minimum(y), ymax::Number=maximum(y), quiet::Bool=false, veryquiet::Bool=true, total::Bool=false, rmse::Bool=true, callback::Function=(y::AbstractVector, y_pr::AbstractVector, pm::AbstractVector)->nothing, kw...)
-	if keepcases !== nothing
+	if !isnothing(keepcases)
 		@assert length(keepcases) == size(x, 2)
 	end
 	@assert length(y) == size(x, 2)
@@ -127,7 +127,7 @@ function fit_test(y::AbstractVector{Float64}, x::AbstractArray{Float64}; ratio::
 	pma = Vector{Bool}(undef, 0)
 	local y_pr
 	for r in 1:repeats
-		if repeats > 1 || pm === nothing
+		if repeats > 1 || isnothing(pm)
 			pm = get_prediction_mask(length(y), ratio; keepcases=keepcases)
 		else
 			@assert length(pm) == size(x, 2)
@@ -166,10 +166,10 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}; ratio::Number=0.1, 
 end
 function fit_test(y::AbstractArray{T}, x::AbstractArray{T}; ratio::Number=0.1, pm=nothing, keepcases::Union{BitArray,Nothing}=nothing, kw...) where {T <: Number}
 	@assert size(y, 1) == size(x, 2)
-	if keepcases !== nothing
+	if !isnothing(keepcases)
 		@assert length(keepcases) == size(x, 2)
 	end
-	if pm === nothing
+	if isnothing(pm)
 		pm = get_prediction_mask(size(y, 1), ratio; keepcases=keepcases)
 	end
 	yp = similar(y)
@@ -188,7 +188,7 @@ function fit_test(y::AbstractVector{T}, x::AbstractArray{T}, vattr::Union{Abstra
 		@info("$attr=>$g: $(ma[i])")
 	end
 	c = check(ma)
-	if c === nothing
+	if isnothing(c)
 		m, i = rmse ? findmin(ma) : findmax(ma)
 	else
 		i = c
@@ -248,7 +248,7 @@ function get_prediction_mask(ns::Number, ratio::Number; keepcases::Union{Abstrac
 	nsi = copy(ns)
 	pm = trues(ns)
 	ic = convert(Int64, ceil(ns * (1. - ratio)))
-	if keepcases !== nothing
+	if !isnothing(keepcases)
 		@assert length(keepcases) == length(pm)
 		kn = sum(keepcases)
 		if ic > kn && ns > kn
@@ -261,7 +261,7 @@ function get_prediction_mask(ns::Number, ratio::Number; keepcases::Union{Abstrac
 	end
 	if nsi >= ic
 		ir = sortperm(rand(nsi))[1:ic]
-		if keepcases !== nothing && ic > kn
+		if !isnothing(keepcases) && ic > kn
 			m = trues(nsi)
 			m[ir] .= false
 			pm[.!keepcases] .= m
