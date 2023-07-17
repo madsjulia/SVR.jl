@@ -62,8 +62,6 @@ const RBF = Int32(2)
 const SIGMOID = Int32(3)
 const PRECOMPUTED = Int32(4)
 
-
-
 shell_path = pwd()
 this_folder_path = dirname(Base.source_path())
 #println(shell_path)

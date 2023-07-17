@@ -60,8 +60,6 @@ const RBF = Int32(2)
 const SIGMOID = Int32(3)
 const PRECOMPUTED = Int32(4)
 
-
-
 shell_path = pwd()
 cd(dirname(Base.source_path()))
 const svmlib = abspath("../libsvm.so.2")
