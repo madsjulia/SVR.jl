@@ -15,6 +15,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 LIBLINEAR = "0.6, 0.7"
 DocumentFunction = "1"
+DelimitedFiles = "1"
 Suppressor = "0.2, 0.3"
 libsvm_jll = "3"
 julia = "1.9"
