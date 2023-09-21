@@ -21,9 +21,8 @@ else
 end
 runSVM(trailfile, testfile, outputfolder, modelfile, options=options)
 
-
 # runSVM("data/wells/wells_trails",
 # 	"data/wells/wells_tests",
 # 	"data/output/curr",
 # 	"wells_model",
-# 	options = "svm_type=EPSILON_SVR, C=100.0, gamma=1.0, eps=0.03125")	
+# 	options = "svm_type=EPSILON_SVR, C=100.0, gamma=1.0, eps=0.03125")
