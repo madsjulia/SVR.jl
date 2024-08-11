@@ -69,7 +69,7 @@ Return:
 function predict(pmodel::svmmodel, x::AbstractArray{Float64})
 	nn = size(x, 1)
 	nx = size(x, 2)
-	y = Array{Float64}(undef, nx)
+	y = Vector{Float64}(undef, nx)
 	if pmodel.plibsvmmodel != Ptr{svm_model}(C_NULL)
 		nn2, nx2 = size(pmodel.nodes)
 		if nn2 - 1 != nn
