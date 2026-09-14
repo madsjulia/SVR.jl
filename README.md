@@ -8,6 +8,8 @@ SVR is a module of [MADS](http://madsjulia.github.io/Mads.jl) (Model Analysis & 
 Installation
 ------------
 
+SVR requires Julia 1.12 or later.
+
 ```julia
 import Pkg; Pkg.add("SVR")
 ```
